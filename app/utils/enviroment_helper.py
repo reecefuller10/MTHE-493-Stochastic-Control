@@ -60,3 +60,17 @@ def print_hospital_data(hospital_dict):
         print('care ratio', hospital_dict[i].care_ratio)
         print("-----------------------")
 
+def update_patients(ID, hospital_dict,population, p_better,p_sick):
+    hospital = hospital_dict[ID]
+    num_patients = hospital.num_patients
+
+    #number of people who get better
+    X = np.random.binomial(num_patients,p_better)
+
+    print('X = ' + str(X))
+
+    Y = np.random.binomial(population, p_sick)
+
+    print("Y = " + str(Y))
+
+    hospital_dict[ID].num_patients = num_patients - X + Y

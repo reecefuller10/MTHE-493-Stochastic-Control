@@ -3,18 +3,18 @@ import numpy as np
 import pandas as pd
 import random
 from enviroment_helper import *
-from transmission_helper import *
 from graph_helper import *
+
 
 
 def move_nurse(G, hospital_dict, from_node, to_node):
 
     if (G.has_node(from_node) == 0):
-        print("ERROR a Hospital with ID " + str(from_node) + "does not exist.")
+        print("ERROR a Hospital with ID " + str(from_node) + " does not exist.")
         return 0
 
     if (G.has_node(to_node) == 0):
-        print("ERROR a Hospital with ID " + str(to_node) + "does not exist.")
+        print("ERROR a Hospital with ID " + str(to_node) + " does not exist.")
         return 0
 
     from_hospital = hospital_dict[from_node]
@@ -31,9 +31,16 @@ def move_nurse(G, hospital_dict, from_node, to_node):
     num_from_0 = from_hospital.num_nurses
     num_to_0 = to_hospital.num_nurses
 
-    hospital_dict[from_node].num_nurses = num_from_0 - 1
-    hospital_dict[to_node].num_nurses = num_to_0 + 1    
+    (hospital_dict[from_node]).num_nurses = num_from_0 - 1
+    (hospital_dict[to_node]).num_nurses = num_to_0 + 1    
 
-    distance = nx.get_edge_Data(from_node, to_node)
+    return hospital_dict
 
-    return hospital_dict, distance
+def get_min_distance(G, from_node, to_node):
+
+    distance = nx.dijkstra_path_length(G,from_node,to_node)
+
+    return distance
+
+if __name__ == "__main__":
+    main()
