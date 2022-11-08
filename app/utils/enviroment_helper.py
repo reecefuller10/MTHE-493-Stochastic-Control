@@ -42,10 +42,10 @@ def create_data_dict(num):
     #generate (pseudo)random values for each attribute for each hospital (todo: Find actual values)
     for i in range(1,num+1):
         nurse_capacity = random.randint(10,20)
-        num_nurses = random.randint(5,20)
-        patient_capacity = random.randint(50,100)
+        num_nurses = random.randint(5,nurse_capacity)
+        patient_capacity = random.randint(50,300)
         num_patients = random.randint(10,70)
-        care_ratio = random.randint(1,4)
+        care_ratio = num_patients/num_nurses
 
         #creates a hospital object with the given attributes for each hospital and stores it in the dictionary (indexed by i)
         data_dict[i] = create_hospital(i,nurse_capacity, num_nurses, patient_capacity, num_patients, care_ratio)
@@ -103,10 +103,12 @@ def drift_patients(ID, hospital_dict,population, p_recover,p_sick):
     #cant have the number of patients exceed the patient capacity
     if num_patients + delta >= hospital.patient_capacity :
         hospital_dict[ID].num_patients = hospital.patient_capacity
+        hospital_dict[ID].care_ratio = hospital.num_patients/hospital.num_nurses
         return hospital_dict
 
     #update number of patients
     hospital_dict[ID].num_patients = num_patients + delta
+    hospital_dict[ID].care_ratio = hospital.num_patients/hospital.num_nurses
 
     return hospital_dict
 

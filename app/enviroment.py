@@ -4,10 +4,9 @@ import pandas as pd
 import random
 import sys
 
-#Update with the path to utils folder on your computer
+#Change this path to /you/path/here/MTHE-493-Stochastic-Control/app/utils
 sys.path.append('/Users/reece/Documents/MTHE493/MTHE-493-Stochastic-Control/app/utils')
 
-#debug system path
 #print(sys.path)
 
 #Import functions from helper files
@@ -44,6 +43,7 @@ def main():
     while(1):
         print("-------------------time = " + str(t) + "-------------------")
         hospital_dict = evolve(hospital_dict= hospital_dict, pop_dict= pop_dict)
+
         print_single_hospital_data(ID= 3, hospital_dict= hospital_dict)
 
         t += 1

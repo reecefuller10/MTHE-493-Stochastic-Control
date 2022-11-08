@@ -18,6 +18,8 @@ def get_neighbours(G,node):
 
 #read graph from text file
 def init_graph():
+
+    #change to /your/path/here/MTHE-493-Stochastic-Control/app/utils/hospital_graph.txt
     G = nx.read_edgelist('/Users/reece/Documents/MTHE493/MTHE-493-Stochastic-Control/app/utils/hospital_graph.txt', nodetype=int, data=(('weight',float),), create_using=nx.Graph())
 
     return G
