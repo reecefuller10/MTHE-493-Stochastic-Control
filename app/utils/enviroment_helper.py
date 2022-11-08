@@ -27,16 +27,11 @@ def create_hospital(ID,nurse_capacity, num_nurses, patient_capacity, num_patient
 
     return h
 
-#Updates any attribute of a hospital object
+#set any attribute of a hospital object
 def set_hospital_attribute(hospital_dict, ID, attribute, new_val):
     
-    #Get the value of the attribute were looking for
-    prev_val = getattr(hospital_dict[ID], attribute)
-    print('prev val = ' + str(prev_val))
-
+    #Hard set hospital attributes
     setattr(hospital_dict[ID], attribute, new_val)
-    new_val = getattr(hospital_dict[ID], attribute)
-    print('new val = ' + str(new_val))
 
 #create a dictionary to store hospital attributes (indexed by ID)
 def create_data_dict(num):
@@ -70,23 +65,57 @@ def print_hospital_data(hospital_dict):
         print('care ratio', hospital_dict[i].care_ratio)
         print("-----------------------")
 
+#Prints the data for a single hospital
+def print_single_hospital_data(ID,hospital_dict):
+    print("Data for Hospital " + str(ID) + ":")
+    print('nurse capacity =', hospital_dict[ID].nurse_capacity)
+    print('num nurses = ', hospital_dict[ID].num_nurses)
+    print('patient capacity = ', hospital_dict[ID].patient_capacity)
+    print('num patients = ', hospital_dict[ID].num_patients)
+    print('care ratio = ', hospital_dict[ID].care_ratio)
+    print("-----------------------")
+
 #Calling this function advances the state for the hospital, absent of control.
-def drift_patients(ID, hospital_dict,population, p_better,p_sick):
+def drift_patients(ID, hospital_dict,population, p_recover,p_sick):
 
     #isolate hospital object from dictionary
     hospital = hospital_dict[ID]
     num_patients = hospital.num_patients
 
     #number of people who get better
-    X = np.random.binomial(num_patients,p_better)
+    X = np.random.binomial(num_patients,p_recover)
 
-    print('X = ' + str(X))
+    #print('X = ' + str(X))
 
     #number of new people who get sick
     Y = np.random.binomial(population, p_sick)
 
-    print("Y = " + str(Y))
+    #print("Y = " + str(Y))
 
     delta = Y - X
 
+    #For testing purposes. just showing info for hospital 3 because looking at all the hospital data hurts my eyes
+    if ID == 3: 
+        print("Recovered patients = " + str(X))
+        print("New patients = " + str(Y))
+        print('\n')
+
+    #cant have the number of patients exceed the patient capacity
+    if num_patients + delta >= hospital.patient_capacity :
+        hospital_dict[ID].num_patients = hospital.patient_capacity
+        return hospital_dict
+
+    #update number of patients
     hospital_dict[ID].num_patients = num_patients + delta
+
+    return hospital_dict
+
+#temp function to generate random populations for all the hospitals and stores them in a list
+def create_population_dict(keys):
+
+    pop_dict = {}
+
+    for i in keys:
+        pop_dict[i] = random.randint(100,2000)
+
+    return pop_dict

@@ -5,7 +5,6 @@ import random
 from enviroment_helper import *
 from graph_helper import *
 
-
 #Function to transfer nurse to another hospital (Will transfer even if hospitals are not connected)
 def move_nurse(G, hospital_dict, from_node, to_node):
 
@@ -26,11 +25,11 @@ def move_nurse(G, hospital_dict, from_node, to_node):
     #--------------------------------------Fail cases--------------------------------------
     if(from_hospital.num_nurses == 0):
         print("ERROR no nurses available to transfer from hospital with ID " + str(from_hospital))
-        return 0
+        return hospital_dict
     
     if(to_hospital.num_nurses == to_hospital.nurse_capacity):
         print("ERROR hospital with ID" + str(to_node) + "is already at full capacity (" + str(to_hospital.nurse_capacity) + ")")
-        return 0
+        return hospital_dict
     #--------------------------------------Fail cases--------------------------------------
 
     #Isolate hospital attributes

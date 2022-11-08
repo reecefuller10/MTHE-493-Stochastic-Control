@@ -12,7 +12,7 @@ def get_neighbours(G,node):
     for n in G.neighbors(node):
         neighbours_list.append(n)
     
-    print(neighbours_list)
+    #print(neighbours_list)
 
     return neighbours_list
 
@@ -22,7 +22,7 @@ def init_graph():
 
     return G
 
-#Show a visual of the graph
+#Pretty picture
 def draw_graph(G):
 
     labels = nx.get_edge_attributes(G,'weight')
