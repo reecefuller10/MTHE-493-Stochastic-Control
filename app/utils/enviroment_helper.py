@@ -13,11 +13,8 @@ class Hospital:
         self.care_ratio = care_ratio
         self.care_ratio_delta = num_nurses/num_patients - care_ratio
 
-    def _update(self):
-        self.care_ratio_delta = self.num_nurses/self.num_patients - self.care_ratio
-
     def echo_care_ratio(self):
-        print(self.num_nurses + "/" + self.num_patients)
+        print(self.care_ratio + '(' + self.num_nurses + "/" + self.num_patients + ')')
 
 #Creates a hospital object
 def create_hospital(ID,nurse_capacity, num_nurses, patient_capacity, num_patients, care_ratio):
