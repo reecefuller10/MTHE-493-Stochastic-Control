@@ -52,5 +52,20 @@ def get_min_distance(G, from_node, to_node):
     #return distane value
     return distance
 
+def get_neighbours_nurses(G,node,hospital_dict):
+
+    #Get list of neighbours
+    neighbours = list(G.neighbors(node))
+    neighbours_dict = {}
+
+    for i in neighbours:
+        neighbours_dict[i] = hospital_dict[i].num_nurses
+        print(neighbours_dict[i])
+
+
+    #Return list of nurses
+    return neighbours_dict
+
+
 if __name__ == "__main__":
     main()

@@ -27,7 +27,7 @@ def create_hospital(ID,nurse_capacity, num_nurses, patient_capacity, num_patient
 
     return h
 
-#set any attribute of a hospital object
+#set any attribute of a hospital object (mainly for development purposes)
 def set_hospital_attribute(hospital_dict, ID, attribute, new_val):
     
     #Hard set hospital attributes
@@ -41,8 +41,8 @@ def create_data_dict(num):
 
     #generate (pseudo)random values for each attribute for each hospital (todo: Find actual values)
     for i in range(1,num+1):
-        nurse_capacity = random.randint(10,20)
-        num_nurses = random.randint(5,nurse_capacity)
+        nurse_capacity = random.randint(30,100)
+        num_nurses = random.randint(15,60)
         patient_capacity = random.randint(50,300)
         num_patients = random.randint(10,70)
         care_ratio = num_patients/num_nurses
@@ -96,8 +96,11 @@ def drift_patients(ID, hospital_dict,population, p_recover,p_sick):
 
     #For testing purposes. just showing info for hospital 3 because looking at all the hospital data hurts my eyes
     if ID == 3: 
+        print('\n')
+        print("------- State Transition Deltas: -------")
         print("Recovered patients = " + str(X))
-        print("New patients = " + str(Y))
+        print("New patients = " + str(Y))           
+        print("----------------------------------------")
         print('\n')
 
     #cant have the number of patients exceed the patient capacity
