@@ -5,7 +5,7 @@ import random
 import sys
 
 #Change this path to /you/path/here/MTHE-493-Stochastic-Control/app/utils
-sys.path.append('/Users/reece/Documents/MTHE493/MTHE-493-Stochastic-Control/app/utils')
+sys.path.append(r'C:\Users\Gmack\MTHE-493-Stochastic-Control\app\utils')
 
 #print(sys.path)
 
