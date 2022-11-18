@@ -27,6 +27,7 @@ def evolve(hospital_dict,time_step):
     return hospital_dict
 
 
+
 def main():
 
     #create a dictionary storing objects that represent each hospital, indexed by ID
@@ -42,12 +43,13 @@ def main():
     G = init_graph()
     
 
-    #loop for the system to evolve
-    #demo code: prints the evolution of hospital with ID = 3 over 5 time steps
-    #           2 actions are taken at time 2 and time 4 as a demonstration
+ 
+    #demo code: prints the evolution of hospital with ID = 3 over 5 time steps.
+    #           Actions are taken at t=2 and t=4 as a demonstration
 
     end_time = 5
 
+    #evolution loop
     t = 0
     while(1):
 
