@@ -14,6 +14,7 @@ from utils.enviroment_helper import *
 from utils.transmission_helper import *
 from utils.graph_helper import *
 from utils.control_system_helper import *
+from Q_learning import *
 
 def evolve(hospital_dict,time_step):
 
@@ -26,8 +27,6 @@ def evolve(hospital_dict,time_step):
 
     return hospital_dict
 
-
-
 def main():
 
     #create a dictionary storing objects that represent each hospital, indexed by ID
@@ -39,6 +38,9 @@ def main():
     #initialize a dictionary to represent the action space, indexed by time step
     action_dict = create_action_dict(hospital_dict)
 
+    create_action_space(1,hospital_dict)
+
+    '''
     #Initialize graph structure
     G = init_graph()
     
@@ -84,9 +86,8 @@ def main():
 
     #draw_graph(G)
 
-
     #print_hospital_data(hospital_dict)
-
+    '''
 
 if __name__ == "__main__":
     main()
