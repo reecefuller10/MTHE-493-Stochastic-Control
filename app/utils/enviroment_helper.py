@@ -21,10 +21,10 @@ class Hospital:
         print(self.care_ratio + '(' + self.num_nurses + "/" + self.num_patients + ')')
 
 #Creates a hospital object
-def create_hospital(ID,nurse_capacity, num_nurses, patient_capacity, num_patients, care_ratio):
+def create_hospital(ID,nurse_capacity, num_nurses, patient_capacity, num_patients, care_ratio, pop_susceptible, pop_infected, pop_recovered):
     
     #Initialize object
-    h = Hospital(ID,nurse_capacity, num_nurses, patient_capacity, num_patients, care_ratio)
+    h = Hospital(ID,nurse_capacity, num_nurses, patient_capacity, num_patients, care_ratio, pop_susceptible, pop_infected, pop_recovered)
 
     return h
 
@@ -47,9 +47,12 @@ def create_data_dict(num):
         patient_capacity = random.randint(50,300)
         num_patients = random.randint(10,70)
         care_ratio = num_patients/num_nurses
+        pop_susceptible = random.randint(100,2000)
+        pop_infected = random.randint(0,pop_susceptible)
+        pop_recovered = 0
 
         #creates a hospital object with the given attributes for each hospital and stores it in the dictionary (indexed by i)
-        data_dict[i] = create_hospital(i,nurse_capacity, num_nurses, patient_capacity, num_patients, care_ratio)
+        data_dict[i] = create_hospital(i,nurse_capacity, num_nurses, patient_capacity, num_patients, care_ratio, pop_susceptible, pop_infected, pop_recovered)
 
     #return hospital dictionary
     return data_dict
@@ -101,11 +104,11 @@ def drift_patients(ID, hospital_dict, pop_susceptible, pop_infected, pop_hospita
     #Transition population
     #average value of a poisson is what's inside the brackets
     #average value of a binomial distribution is n*p (i.e. multiply the inputs) 
-    infected_to_recovered = np.random.binomial(infected, P1)
-    infected_to_hospitalized = np.random.binomial(infected, P2)
+    infected_to_recovered = np.random.binomial(pop_infected, P1)            #changed infected to pop_infected (infected isnt initialized)
+    infected_to_hospitalized = np.random.binomial(pop_infected, P2)
     susceptible_to_infected = np.random.poisson(pop_susceptible * P3)
-    recovered_to_infected = np.random.poisson(hospitalized * P4)
-    hospitalized_to_recovered = np.random.binomial(hospitalized, P5)
+    recovered_to_infected = np.random.poisson(pop_hospitalized * P4)
+    hospitalized_to_recovered = np.random.binomial(pop_hospitalized, P5)
 
     #Evolution of susceptible population
     susceptible = pop_susceptible - susceptible_to_infected
@@ -149,6 +152,7 @@ def drift_patients(ID, hospital_dict, pop_susceptible, pop_infected, pop_hospita
 
     return hospital_dict
 
+#probably depreciate
 #temp function to generate random populations for all the hospitals and stores them in a list
 def create_population_dict(keys):
 
