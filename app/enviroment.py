@@ -5,7 +5,8 @@ import random
 import sys
 
 #Change this path to /you/path/here/MTHE-493-Stochastic-Control/app/utils
-sys.path.append(r'C:\Users\Gmack\MTHE-493-Stochastic-Control\app\utils')
+#sys.path.append(r'C:\Users\Gmack\MTHE-493-Stochastic-Control\app\utils')
+sys.path.append('/Users/reece/Documents/MTHE493/MTHE-493-Stochastic-Control/app/utils')
 
 #print(sys.path)
 
@@ -38,9 +39,9 @@ def main():
     #initialize a dictionary to represent the action space, indexed by time step
     action_dict = create_action_dict(hospital_dict)
 
-    create_action_space(1,hospital_dict)
+    #create_action_space(hospital_dict)
 
-    '''
+    
     #Initialize graph structure
     G = init_graph()
     
@@ -87,7 +88,7 @@ def main():
     #draw_graph(G)
 
     #print_hospital_data(hospital_dict)
-    '''
+    
 
 if __name__ == "__main__":
     main()
