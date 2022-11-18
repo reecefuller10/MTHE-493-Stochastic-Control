@@ -5,7 +5,7 @@ import random
 import sys
 
 #Change this path to /you/path/here/MTHE-493-Stochastic-Control/app/utils
-sys.path.append('/Users/reece/Documents/MTHE493/MTHE-493-Stochastic-Control/app/utils')
+sys.path.append(r'C:\Users\Gmack\MTHE-493-Stochastic-Control\app\utils')
 
 #print(sys.path)
 
@@ -15,12 +15,14 @@ from utils.transmission_helper import *
 from utils.graph_helper import *
 from utils.control_system_helper import *
 
-def evolve(hospital_dict,pop_dict):
+def evolve(hospital_dict,time_step):
 
     #call drift patients on every hospital
     for ID in hospital_dict.keys():
-        hospital_dict = drift_patients(ID,hospital_dict,pop_dict[ID],0.25,0.02)
+        hospital_dict = drift_patients(ID,hospital_dict,hospital_dict[ID].pop_susceptible,hospital_dict[ID].pop_infected,hospital_dict[ID].num_patients,hospital_dict[ID].pop_recovered,time_step)
 
+    #def drift_patients(ID, hospital_dict, pop_susceptible, pop_infected, pop_hospitalized, pop_recovered, time_step):
+    
 
     return hospital_dict
 
@@ -71,7 +73,7 @@ def main():
         print('actions posted' + str(t), action_dict[t])
 
         #transition the sytstem to the next state
-        hospital_dict = evolve(hospital_dict= hospital_dict, pop_dict= pop_dict)
+        hospital_dict = evolve(hospital_dict= hospital_dict, time_step= t)
 
         t += 1
 
