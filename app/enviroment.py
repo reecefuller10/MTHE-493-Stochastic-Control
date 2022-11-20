@@ -28,24 +28,23 @@ def evolve(hospital_dict,time_step):
     for keys in hospital_dict.keys():
         care_array.append(hospital_dict[keys].care_ratio)
     
-    #test stuff for reward
+    #depreciate
     num_bad = 0
     for val in care_array:
         if val <= 0.5:
             num_bad += 1
-
+            
 
     reward = 0
 
-    #a poorly implemented way to stop divide by 0 errors
+    #a poorly implemented way to stop divide by 0 errors (might not be needed anymore)
     for ID in hospital_dict.keys():
         if hospital_dict[ID].num_nurses != 0:
         #temporary reward function
             reward += hospital_dict[ID].care_ratio
+        
+    reward = reward/len(hospital_dict.keys())
     
-    
-    
-
     return hospital_dict, reward
 
 def main():
@@ -53,20 +52,9 @@ def main():
     #create a dictionary storing objects that represent each hospital, indexed by ID
     hospital_dict = create_data_dict(num= 5) 
 
-    #create a dictionary storing the populations for each hospital, indexed by ID
-    pop_dict = create_population_dict(hospital_dict.keys())
-
     #initialize a dictionary to represent the action space, indexed by time step
     action_dict = create_action_dict(hospital_dict)
 
-    create_state_space(hospital_dict)
-
-    #create_action_space(hospital_dict)
-
-    #create_action_space(hospital_dict)
-
-
-    
     #Initialize graph structure
     G = init_graph()
     
