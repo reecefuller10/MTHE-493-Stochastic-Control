@@ -161,8 +161,7 @@ def drift_patients(ID, hospital_dict, pop_susceptible, pop_infected, pop_hospita
 
     return hospital_dict
 
-#probably depreciate
-#temp function to generate random populations for all the hospitals and stores them in a list
+#depreicated
 def create_population_dict(keys):
 
     pop_dict = {}
