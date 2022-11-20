@@ -1,7 +1,7 @@
 import numpy as np
 from transmission_helper import *
 
-#todo (maybe)
+#Depreciated
 def create_state_space_representation(ID, hospital_dict):
 
     
@@ -35,17 +35,21 @@ def increment_action_dict(hospital_dict, action_dict, t):
 
         actions[id] = 0
 
-    action_dict[t+1] = actions
+    action_dict[t] = actions
 
     return action_dict
 
 #update action_dict to reflect actions that will be implemented at the next time step
-def post_action(from_id, to_id, num_nurses, G, hospital_dict, action_dict, time_step):
+def post_action(action, action_dict, time_step):
+    
+    actions = {}
+    
+    #loop through hospitals and update the actions dict based on actions taken
+    for key in list(action_dict[time_step].keys()):
+        idx = int(key)
+        actions[key] = action[idx -1 ]
 
-    action_dict[time_step][from_id] -= num_nurses
-    action_dict[time_step][to_id] += num_nurses
-
-    return action_dict
+    return actions
 
 #apply the posted actions to the hospital_dict
 def resolve_action(hospital_dict, action_dict, time_step):
@@ -53,15 +57,7 @@ def resolve_action(hospital_dict, action_dict, time_step):
     #loop through hospitals and update their nurse counts
     for id in hospital_dict.keys():
             if(time_step != 0):
-                '''
-                print('\n')
-                print('action dict = ', action_dict[time_step-1])
-                print('\n')
-                '''
-                hospital_dict[id].num_nurses += action_dict[time_step-1][id]
                 
-
-
-    
-
+                hospital_dict[id].num_nurses += action_dict[time_step][id]
+                
     return hospital_dict

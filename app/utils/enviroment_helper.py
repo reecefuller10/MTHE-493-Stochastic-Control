@@ -12,7 +12,14 @@ class Hospital:
         self.patient_capacity = patient_capacity
         self.num_patients = num_patients
         self.best_care_ratio = best_care_ratio
-        self.care_ratio = self.num_nurses/self.num_patients
+        if (self.num_patients == 0):
+            self.care_ratio = 0
+        else: 
+            self.care_ratio = self.num_nurses/self.num_patients
+        if(self.num_nurses == 0):
+            self.care_ratio = 0
+        else:
+            self.care_ratio = self.num_nurses/self.num_patients
         self.care_ratio_delta = num_nurses/num_patients - best_care_ratio
         self.pop_susceptible =  pop_susceptible
         self.pop_infected = pop_infected
@@ -44,12 +51,12 @@ def create_data_dict(num):
 
     #generate (pseudo)random values for each attribute for each hospital (todo: Find actual values)
     for i in range(1,num+1):
-        nurse_capacity = random.randint(2,3)
+        nurse_capacity = random.randint(2,5)
         num_nurses = random.randint(2,nurse_capacity)
-        patient_capacity = random.randint(4,4)
-        num_patients = random.randint(2,patient_capacity)
+        patient_capacity = random.randint(4,20)
+        num_patients = random.randint(1,patient_capacity)
         care_ratio = num_patients/num_nurses
-        pop_susceptible = random.randint(15,20)
+        pop_susceptible = random.randint(5,100)
         pop_infected = random.randint(1,int(pop_susceptible/2))
         pop_recovered = 0
 

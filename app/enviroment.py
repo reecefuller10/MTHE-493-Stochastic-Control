@@ -39,14 +39,9 @@ def evolve(hospital_dict,time_step):
 
     #a poorly implemented way to stop divide by 0 errors
     for ID in hospital_dict.keys():
-        if (hospital_dict[ID].care_ratio == 'inf'):
-            hospital_dict[ID].care_ratio = 0 
-        
-        if (hospital_dict[ID].care_ratio == 'nan'):
-            hospital_dict[ID].care_ratio = -1
-        
+        if hospital_dict[ID].num_nurses != 0:
         #temporary reward function
-        reward += hospital_dict[ID].care_ratio
+            reward += hospital_dict[ID].care_ratio
     
     
     
@@ -83,7 +78,7 @@ def main():
 
 
     #number of episodes
-    end_time = 1000
+    end_time = 500
     
     #evolution loop
     t = 0
