@@ -2,16 +2,18 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 import random
+import math as m
 
 class Hospital:
-    def __init__(self, ID, nurse_capacity, num_nurses, patient_capacity, num_patients, care_ratio, pop_susceptible, pop_infected, pop_recovered):
+    def __init__(self, ID, nurse_capacity, num_nurses, patient_capacity, num_patients, best_care_ratio, pop_susceptible, pop_infected, pop_recovered):
         self.ID = ID
         self.nurse_capacity = nurse_capacity
         self.num_nurses = num_nurses
         self.patient_capacity = patient_capacity
         self.num_patients = num_patients
-        self.care_ratio = care_ratio
-        self.care_ratio_delta = num_nurses/num_patients - care_ratio
+        self.best_care_ratio = best_care_ratio
+        self.care_ratio = self.num_nurses/self.num_patients
+        self.care_ratio_delta = num_nurses/num_patients - best_care_ratio
         self.pop_susceptible =  pop_susceptible
         self.pop_infected = pop_infected
         self.pop_recovered = pop_recovered
@@ -21,10 +23,10 @@ class Hospital:
         print(self.care_ratio + '(' + self.num_nurses + "/" + self.num_patients + ')')
 
 #Creates a hospital object
-def create_hospital(ID,nurse_capacity, num_nurses, patient_capacity, num_patients, care_ratio):
+def create_hospital(ID,nurse_capacity, num_nurses, patient_capacity, num_patients, care_ratio, pop_susceptible, pop_infected, pop_recovered):
     
     #Initialize object
-    h = Hospital(ID,nurse_capacity, num_nurses, patient_capacity, num_patients, care_ratio)
+    h = Hospital(ID,nurse_capacity, num_nurses, patient_capacity, num_patients, care_ratio, pop_susceptible, pop_infected, pop_recovered)
 
     return h
 
@@ -42,14 +44,17 @@ def create_data_dict(num):
 
     #generate (pseudo)random values for each attribute for each hospital (todo: Find actual values)
     for i in range(1,num+1):
-        nurse_capacity = random.randint(30,100)
-        num_nurses = random.randint(15,60)
-        patient_capacity = random.randint(50,300)
-        num_patients = random.randint(10,70)
+        nurse_capacity = random.randint(2,3)
+        num_nurses = random.randint(2,nurse_capacity)
+        patient_capacity = random.randint(4,4)
+        num_patients = random.randint(2,patient_capacity)
         care_ratio = num_patients/num_nurses
+        pop_susceptible = random.randint(15,20)
+        pop_infected = random.randint(1,int(pop_susceptible/2))
+        pop_recovered = 0
 
         #creates a hospital object with the given attributes for each hospital and stores it in the dictionary (indexed by i)
-        data_dict[i] = create_hospital(i,nurse_capacity, num_nurses, patient_capacity, num_patients, care_ratio)
+        data_dict[i] = create_hospital(i,nurse_capacity, num_nurses, patient_capacity, num_patients, care_ratio, pop_susceptible, pop_infected, pop_recovered)
 
     #return hospital dictionary
     return data_dict
@@ -101,11 +106,11 @@ def drift_patients(ID, hospital_dict, pop_susceptible, pop_infected, pop_hospita
     #Transition population
     #average value of a poisson is what's inside the brackets
     #average value of a binomial distribution is n*p (i.e. multiply the inputs) 
-    infected_to_recovered = np.random.binomial(infected, P1)
-    infected_to_hospitalized = np.random.binomial(infected, P2)
+    infected_to_recovered = np.random.binomial(pop_infected, P1)            #changed infected to pop_infected (infected isnt initialized)
+    infected_to_hospitalized = np.random.binomial(pop_infected, P2)
     susceptible_to_infected = np.random.poisson(pop_susceptible * P3)
-    recovered_to_infected = np.random.poisson(hospitalized * P4)
-    hospitalized_to_recovered = np.random.binomial(hospitalized, P5)
+    recovered_to_infected = np.random.poisson(pop_hospitalized * P4)
+    hospitalized_to_recovered = np.random.binomial(pop_hospitalized, P5)
 
     #Evolution of susceptible population
     susceptible = pop_susceptible - susceptible_to_infected
@@ -129,7 +134,7 @@ def drift_patients(ID, hospital_dict, pop_susceptible, pop_infected, pop_hospita
     delta =  infected_to_hospitalized - hospitalized_to_recovered
 
     #For testing purposes. just showing info for hospital 3 because looking at all the hospital data hurts my eyes
-    if ID == 3: 
+    if ID == 9: 
         print('\n')
         print("------- State Transition Deltas: -------")
         print("Recovered patients = " + str(hospitalized_to_recovered))
@@ -149,6 +154,7 @@ def drift_patients(ID, hospital_dict, pop_susceptible, pop_infected, pop_hospita
 
     return hospital_dict
 
+#probably depreciate
 #temp function to generate random populations for all the hospitals and stores them in a list
 def create_population_dict(keys):
 
@@ -158,4 +164,32 @@ def create_population_dict(keys):
         pop_dict[i] = random.randint(100,2000)
 
     return pop_dict
+
+def get_average_care_ratio(hospital_dict):
+
+    #get the average care ratio for all hospitals
+    total = 0
+    for i in hospital_dict.keys():
+        if(np.isinf(hospital_dict[i].care_ratio)):
+            total += 0
+        if(np.isnan(hospital_dict[i].care_ratio)):
+            total += 0
+        else: 
+            total += hospital_dict[i].care_ratio
+
+    return total/len(hospital_dict.keys())
+
+def print_care_ratios(hospital_dict):
+
+    care_ratios = []
+
+    #need a way to not have number of nurses be 0 because that causes infinite care ratios
+    for i in hospital_dict.keys():
+        if hospital_dict[i].care_ratio == 'inf':
+            hospital_dict[i].care_ratio = 0
+        if hospital_dict[i].care_ratio == 'nan':
+            hospital_dict[i].care_ratio = -1
+        care_ratios.append(hospital_dict[i].care_ratio)
+
+    print('care ratios = ',care_ratios)
 

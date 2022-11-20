@@ -2,6 +2,13 @@ import numpy as np
 import networkx as nx
 import matplotlib.pyplot as plt
 
+def graph_care_ratio(picture):
+
+    x = np.linspace(0,len(picture),len(picture))
+
+    plt.scatter(x,picture)
+    plt.show()
+
 #returns a list of all the nodes adjacent to the input node
 def get_neighbours(G,node):
 
@@ -20,8 +27,8 @@ def get_neighbours(G,node):
 def init_graph():
 
     #change to /your/path/here/MTHE-493-Stochastic-Control/app/utils/hospital_graph.txt
-    G = nx.read_edgelist('C:\Users\Gmack\MTHE-493-Stochastic-Control\app\utils\hospital_graph.txt', nodetype=int, data=(('weight',float),), create_using=nx.Graph())
-
+    #G = nx.read_edgelist('C:\Users\Gmack\MTHE-493-Stochastic-Control\app\utils\hospital_graph.txt', nodetype=int, data=(('weight',float),), create_using=nx.Graph())
+    G = nx.read_edgelist('/Users/reece/Documents/MTHE493/MTHE-493-Stochastic-Control/app/utils/hospital_graph.txt', nodetype=int, data=(('weight',float),), create_using=nx.Graph())
     return G
 
 #Pretty picture
