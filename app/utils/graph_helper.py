@@ -2,6 +2,13 @@ import numpy as np
 import networkx as nx
 import matplotlib.pyplot as plt
 
+def graph_care_ratio(picture):
+
+    x = np.linspace(0,len(picture),len(picture))
+
+    plt.scatter(x,picture)
+    plt.show()
+
 #returns a list of all the nodes adjacent to the input node
 def get_neighbours(G,node):
 
