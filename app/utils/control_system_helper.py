@@ -40,18 +40,18 @@ def increment_action_dict(hospital_dict, action_dict, t):
     return action_dict
 
 #update action_dict to reflect actions that will be implemented at the next time step
-def post_action(action, action_dict, time_step):
+def take_action(action, hospital_dict, time_step):
     
     actions = {}
     
     #loop through hospitals and update the actions dict based on actions taken
-    for key in list(action_dict[time_step].keys()):
+    for key in list(hospital_dict.keys()):
         idx = int(key)
-        actions[key] = action[idx -1 ]
+        hospital_dict[key].num_nurses += action[idx-1]
 
-    return actions
+    return hospital_dict
 
-#apply the posted actions to the hospital_dict
+#depreciated
 def resolve_action(hospital_dict, action_dict, time_step):
 
     #loop through hospitals and update their nurse counts

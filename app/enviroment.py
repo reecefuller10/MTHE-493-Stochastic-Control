@@ -89,25 +89,23 @@ def main():
         state_ID = get_state_ID(state,Q)
         print('initial state id = ',state_ID)
         
-        #debugging check
-        print('state from ID = ',Q.states[state_ID])
 
         #have the agent choose an action
         action, action_ID = Q.choose_action(state_ID, hospital_dict)
         print('action = ',action)
         print('found action id = ',action_ID)
+         #debugging check
+        if np.array_equal(Q.states[state_ID],state): 
+            print('states match')
 
         #debugging check
-        print('action from ID = ',Q.actions[action_ID])
+        if(np.array_equal(Q.actions[action_ID],action)):
+            print('actions match')
 
         #post the action to the action dict
-        action_dict[t] = post_action(action, action_dict, t)
+        hospital_dict = take_action(action, hospital_dict, t)
 
-        #resolve actions taken at the previous time step
-        hospital_dict = resolve_action(hospital_dict, action_dict, t)
-
-        #print posted actions
-        print('action posted to dict = ', action_dict[t])
+        print_hospital_data(hospital_dict)
 
         #transition the sytstem to the next state and get the reward
         hospital_dict,reward = evolve(hospital_dict= hospital_dict, time_step= t)
