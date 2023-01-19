@@ -1,12 +1,6 @@
 import numpy as np
 from transmission_helper import *
 
-#Depreciated
-def create_state_space_representation(ID, hospital_dict):
-
-    
-    state_matrix = np.array([0,0])
-
 #create the dictionary used to represent actions taken at each time step
 def create_action_dict(hospital_dict):
 
