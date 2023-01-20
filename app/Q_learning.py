@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import random as rand
+import time
 
 class state:
     def __init__(self, ID, state_values):
@@ -175,6 +176,7 @@ class Q_table:
 
         #array where each entry is a possible state
         #No idea how this line works
+
         comb_array = np.array(np.meshgrid(patients_dict[1],patients_dict[2],patients_dict[3],patients_dict[4],patients_dict[5])).T.reshape(-1,5)
         
         self.states = comb_array
@@ -182,11 +184,19 @@ class Q_table:
         #print(comb_array)
         #print(comb_array[0])
         #print(comb_array)
+        tik = time.time()
         for i in range(len(comb_array)):
             value = state(i,comb_array[i])
             object_array.append(value)
-            
+        tok = time.time()
+        print(f"creating state objects took {tok-tik} seconds")
+
+        tik = time.time()
+        #dont need to sort, jsut get the the max # of patients in each hospital and add them (TODO)
         sorted_array = sorted(object_array)
+        tok = time.time()
+        print(f"sorting took {tok-tik} seconds")
+
         '''
         for i in range(len(sorted_array)):
             print(f"sorted_array[{i}] = {sorted_array[i].state_values}, sum = {sorted_array[i].sum} id = {sorted_array[i].ID}")
@@ -196,25 +206,24 @@ class Q_table:
         max = sorted_array[-1].sum
         buckets = np.linspace(min,max,N,True, dtype = int)
         buckets = np.delete(buckets,0)
-        print(f"buckets = {buckets}")
+        #print(f"buckets = {buckets}")
 
         for i in buckets:
             partition_dict[i] = []
         
-        print(partition_dict)
-        
+        #print(partition_dict)
+        tik = time.time()
         for object in sorted_array:
             for i in buckets:
                 if object.sum <= i:
                     #print(f"bucket chose = {i} for a sum of {object.sum}")
                     partition_dict[i].append(object)
                     break
+        tok = time.time()
+        print(f"partitioning took {tok-tik} seconds")
         
         self.partitioned_states = partition_dict
         
-        #return all states
-        
-
     def initialize_table(self):
         #initialize table with zeros (table is represented by a 2d array indexed as table[state][action] = Q_value)
         self.table = np.zeros(((self.states.shape)[0],(self.actions.shape)[0]))
