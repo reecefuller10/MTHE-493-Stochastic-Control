@@ -66,11 +66,17 @@ def main():
     #Initialize graph structure
     G = init_graph()
     
+    tik = time.time()
+
     #initialize Q stuff
     Q = Q_table(learning_rate=0.1, discount_factor=0.9, gamma=0.9)
+
     Q.initalize_actions(hospital_dict)
     Q.initialize_states(hospital_dict)
     Q.initialize_table()
+
+    tok = time.time()
+    print(f"Q init time = {tok-tik}")
 
     #print(f"Q.states = {Q.states}")
 
@@ -84,7 +90,7 @@ def main():
 
 
     #number of episodes
-    end_time = 100
+    end_time = 10000
     
     #evolution loop
     t = 0
