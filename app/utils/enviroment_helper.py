@@ -51,6 +51,7 @@ def create_data_dict(num):
 
     #generate (pseudo)random values for each attribute for each hospital (todo: Find actual values)
     for i in range(1,num+1):
+        '''
         nurse_capacity = random.randint(2,5)
         num_nurses = random.randint(2,nurse_capacity)
         patient_capacity = random.randint(4,20)
@@ -58,6 +59,15 @@ def create_data_dict(num):
         care_ratio = num_patients/num_nurses
         pop_susceptible = random.randint(5,100)
         pop_infected = random.randint(1,int(pop_susceptible/2))
+        pop_recovered = 0
+        '''
+        nurse_capacity = 5
+        num_nurses = 3
+        patient_capacity = 20
+        num_patients = 1
+        care_ratio = num_patients/num_nurses
+        pop_susceptible = 500
+        pop_infected = 50
         pop_recovered = 0
 
         #creates a hospital object with the given attributes for each hospital and stores it in the dictionary (indexed by i)
@@ -90,14 +100,22 @@ def print_single_hospital_data(ID,hospital_dict):
 
 #Calling this function advances the state for the hospital, absent of control.
 def drift_patients(ID, hospital_dict, pop_susceptible, pop_infected, pop_hospitalized, pop_recovered, time_step):
-    
+    '''
     #definition of the rates defining the transition in between states
     rate_susceptibletoinfected = 50                 #number of cases per day (different rates can be tested to see if they're stabilizable)
     rate_recoveredtoinfected = 1                    #random number less than sesceptibletoinfected (needs changing)
     rate_infectedtorecovered = 0.1                  #An infected individual will be sick for 10 days on average
     rate_infectedtohospitalized = 63961 / 2180000   #number of hospitalizations 2020-2021 / number of confirmed cases 2020-2021
     rate_hospitalizedtorecovered = 1/14.7           #on average hospitalized patients spent 14.7 days in the hospital
-    
+    '''
+
+    #definition of the rates defining the transition in between states
+    rate_susceptibletoinfected = 0.0005                 #number of cases per day (different rates can be tested to see if they're stabilizable)
+    rate_recoveredtoinfected = 1/1000                    #random number less than sesceptibletoinfected (needs changing)
+    rate_infectedtorecovered = .1/1000                  #An infected individual will be sick for 10 days on average
+    rate_infectedtohospitalized = 0.002 #63961 / 2180000   #number of hospitalizations 2020-2021 / number of confirmed cases 2020-2021
+    rate_hospitalizedtorecovered = 1/14.7           #on average hospitalized patients spent 14.7 days in the hospital
+
     #isolate hospital object from dictionary
     hospital = hospital_dict[ID]
     num_patients = hospital.num_patients
@@ -113,15 +131,30 @@ def drift_patients(ID, hospital_dict, pop_susceptible, pop_infected, pop_hospita
     #Transition population
     #average value of a poisson is what's inside the brackets
     #average value of a binomial distribution is n*p (i.e. multiply the inputs) 
+    if pop_susceptible < 0:
+        pop_susceptible = 0
+    if pop_infected < 0:
+        pop_infected = 0
+    if pop_infected < 0:
+        pop_infected = 0
+    if pop_hospitalized < 0:
+        pop_hospitalized = 0
+    if pop_recovered < 0:
+        pop_recovered = 0
+    
     infected_to_recovered = np.random.binomial(pop_infected, P1)            #changed infected to pop_infected (infected isnt initialized)
     infected_to_hospitalized = np.random.binomial(pop_infected, P2)
-    susceptible_to_infected = np.random.poisson(pop_susceptible * P3)
+    susceptible_to_infected = min(np.random.poisson(pop_susceptible * P3), pop_susceptible)
     recovered_to_infected = np.random.poisson(pop_hospitalized * P4)
     hospitalized_to_recovered = np.random.binomial(pop_hospitalized, P5)
 
+    #print(f"infected_to_recovered = {infected_to_recovered}, infected_to_hospitalized = {infected_to_hospitalized}, susceptible_to_infected = {susceptible_to_infected}, recovered_to_infected = {recovered_to_infected}, hospitalized_to_recovered = {hospitalized_to_recovered}")
+    
     #Evolution of susceptible population
-    susceptible = pop_susceptible - susceptible_to_infected
 
+    susceptible = pop_susceptible - susceptible_to_infected #this is hella broken
+
+    print(f"susceptible = {susceptible}, susceptible_to_infected = {susceptible_to_infected}")
     #Evolution of recovered people
     recovered = pop_recovered + infected_to_recovered + hospitalized_to_recovered - recovered_to_infected
 
@@ -155,8 +188,22 @@ def drift_patients(ID, hospital_dict, pop_susceptible, pop_infected, pop_hospita
         hospital_dict[ID].care_ratio = hospital.num_patients/hospital.num_nurses
         return hospital_dict
 
+    if pop_susceptible < 0:
+        pop_susceptible = 0
+    if pop_infected < 0:
+        pop_infected = 0
+    if pop_infected < 0:
+        pop_infected = 0
+    if pop_hospitalized < 0:
+        pop_hospitalized = 0
+    if pop_recovered < 0:
+        pop_recovered = 0
+
     #update number of patients
     hospital_dict[ID].num_patients = hospitalized
+    hospital_dict[ID].pop_infected = infected
+    hospital_dict[ID].pop_recovered = recovered
+    hospital_dict[ID].pop_susceptible = susceptible
     hospital_dict[ID].care_ratio = hospital.num_patients/hospital.num_nurses
 
     return hospital_dict
