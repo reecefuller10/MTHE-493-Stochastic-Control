@@ -76,7 +76,8 @@ def main():
     Q.initialize_table()
 
     tok = time.time()
-    print(f"Q init time = {tok-tik}")
+    #print(f"Q init time = {tok-tik}")
+
 
     #print(f"Q.states = {Q.states}")
 
@@ -98,7 +99,7 @@ def main():
     picture = []
     t1 = time.time()
 
-    
+    quantized = True
 
     while(1):
 
@@ -111,7 +112,14 @@ def main():
 
         tic = time.time()
         #get initial state
-        state = get_state(hospital_dict)
+        if (quantized == False):
+            state = get_state(hospital_dict)
+
+        if (quantized == True):
+            state = get_state(hospital_dict)
+            state = quantize_state(hospital_dict,state, Q)
+
+
         #print('initial state = ',state)
         tok = time.time()
         #print('time to get state = ',tok-tic)
@@ -148,7 +156,11 @@ def main():
 
         #get the new state
         tik = time.time()
-        next_state = get_state(hospital_dict)
+        if(quantized == False):
+            next_state = get_state(hospital_dict)
+        if(quantized == True):
+            next_state = get_state(hospital_dict)
+            next_state = quantize_state(hospital_dict,next_state, Q)
         tok = time.time()
         #print('time to get next state = ',tok-tik)
 
@@ -159,7 +171,7 @@ def main():
         #print('time to get next state id = ',tok-tik)
 
         #debugging check
-        print('next state ID = ',next_state_ID)
+        #print('next state ID = ',next_state_ID)
         print('next state = ',next_state)
 
         #print('Reward = ', reward)
@@ -171,7 +183,7 @@ def main():
         tok = time.time()
         #print('time to learn = ',tok-tik)
         T2 = time.time()
-        print("total time = ",T2 - T1)
+        #print("total time = ",T2 - T1)
 
         #this is to graph the average care ratio over time after episodes are finished. I named it picture because I'm lazy (Copilot wrote this line lol)
         #picture.append(get_average_care_ratio(hospital_dict))

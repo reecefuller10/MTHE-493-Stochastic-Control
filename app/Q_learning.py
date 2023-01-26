@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import random as rand
+import math as m
 import time
 
 class state:
@@ -16,6 +17,42 @@ class state:
     def __gt__(self, other): #greater than method for sorting
         return self.sum > other.sum
 
+def create_quantized_state_space(hospital_dict,num_levels):
+
+    quantized_dict = {}
+    
+    for ID in hospital_dict.keys():
+        arr = np.linspace(0,num_levels,num_levels + 1,True, dtype = int)
+        quantized_dict[ID] = arr
+
+    comb_array = np.array(np.meshgrid(quantized_dict[1],quantized_dict[2],quantized_dict[3],quantized_dict[4],quantized_dict[5])).T.reshape(-1,5)
+
+    return comb_array
+
+def quantize_state(hospital_dict,state,Q):
+
+    N = Q.num_levels
+    steps = []
+    
+    print(f"unquantized state = {state}")
+
+    for i in hospital_dict.keys():
+        steps.append(m.ceil(hospital_dict[i].patient_capacity / N))
+
+    for i in range(len(state)):
+        j = 1
+        while(1):
+            if state[i] <= steps[i]* j:
+                state[i] = j
+                break
+            j += 1
+    print(f"quantized state = {state}")
+
+    return state
+
+    
+
+    
 #create an array with all possible states
 def create_state_space(hospital_dict):
     
@@ -29,16 +66,14 @@ def create_state_space(hospital_dict):
     
     #array of arrays where the inner index is all possible values for that hospital
     for ID in hospital_dict.keys():
-        array = np.linspace(0,hospital_dict[ID].patient_capacity,hospital_dict[ID].patient_capacity +1 ,True, dtype = int)
+        array = np.linspace(1,hospital_dict[ID].patient_capacity,hospital_dict[ID].patient_capacity +1 ,True, dtype = int)
         print(f"linspace array = {array}")
         patients_dict[ID] = array
 
     #array where each entry is a possible state
     #No idea how this line works
     comb_array = np.array(np.meshgrid(patients_dict[1],patients_dict[2],patients_dict[3],patients_dict[4],patients_dict[5])).T.reshape(-1,5)
-    print(comb_array)
-    print(comb_array[0])
-    print(comb_array)
+  
     for i in range(len(comb_array)):
         value = state(i,comb_array[i])
         object_array.append(value)
@@ -153,14 +188,29 @@ class Q_table:
         self.actions = 0
         self.states = 0
         self.num_Q_values_updated = 0
+        self.num_levels = 5
+
+    def initialize_quantized_states(self,hospital_dict, num_levels):
+
+        quantized_dict = {}
+        
+        for ID in hospital_dict.keys():
+            arr = np.linspace(0,num_levels,num_levels + 1,True, dtype = int)
+            quantized_dict[ID] = arr
+
+        comb_array = np.array(np.meshgrid(quantized_dict[1],quantized_dict[2],quantized_dict[3],quantized_dict[4],quantized_dict[5])).T.reshape(-1,5)
+
+        self.quantized_states = comb_array
+            
 
     def initalize_actions(self,hospital_dict):
         self.actions = create_action_space(hospital_dict)
     
     def initialize_states(self,hospital_dict):
         #self.states = create_state_space(hospital_dict)
+        quantized = True
 
-        N = 100 #number of partitions of the state space (for easier lookups later)
+        N = 5 #number of partitions of the state space (for easier lookups later)
 
         #going to index each possible state by a number
 
@@ -169,10 +219,17 @@ class Q_table:
         object_array = []
         
         #array of arrays where the inner index is all possible values for that hospital
-        for ID in hospital_dict.keys():
-            array = np.linspace(0,hospital_dict[ID].patient_capacity,hospital_dict[ID].patient_capacity +1 ,True, dtype = int)
-            #print(f"linspace array = {array}")
-            patients_dict[ID] = array
+        if(quantized == False):
+            for ID in hospital_dict.keys():
+                array = np.linspace(0,hospital_dict[ID].patient_capacity,hospital_dict[ID].patient_capacity +1 ,True, dtype = int)
+                #print(f"linspace array = {array}")
+                patients_dict[ID] = array
+
+        if(quantized == True):
+            for ID in hospital_dict.keys():
+                array = np.linspace(1,self.num_levels,self.num_levels ,True, dtype = int)
+                #print(f"linspace array = {array}")
+                patients_dict[ID] = array
 
         #array where each entry is a possible state
         #No idea how this line works
@@ -220,7 +277,7 @@ class Q_table:
                     partition_dict[i].append(object)
                     break
         tok = time.time()
-        print(f"partitioning took {tok-tik} seconds")
+        #print(f"partitioning took {tok-tik} seconds")
         
         self.partitioned_states = partition_dict
         
@@ -246,7 +303,7 @@ class Q_table:
                 #print("exploited action = ", action)
             
             #used range function because of error when converting iterator to scalar (h-1 is the problem) (TODO: Optimize this)
-            for h in range(1,5):
+            for h in range(1,6):
 
                 #fail case to handle if it picks an integer instead of a 5-tuple (TODO: stop this from happening)
                 try: 
