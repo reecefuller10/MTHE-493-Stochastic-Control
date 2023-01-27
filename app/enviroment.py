@@ -17,6 +17,7 @@ from utils.transmission_helper import *
 from utils.graph_helper import *
 from utils.control_system_helper import *
 from Q_learning import *
+import pickle
 
 def evolve(hospital_dict,time_step):
 
@@ -36,7 +37,7 @@ def evolve(hospital_dict,time_step):
     for keys in hospital_dict.keys():
         care_array.append(hospital_dict[keys].care_ratio)
     
-    #depreciate
+    #depricate
     num_bad = 0
     for val in care_array:
         if val <= 0.5:
@@ -49,9 +50,10 @@ def evolve(hospital_dict,time_step):
     for ID in hospital_dict.keys():
         if hospital_dict[ID].num_nurses != 0:
         #temporary reward function
-            reward += hospital_dict[ID].care_ratio
-        
-    reward = reward/len(hospital_dict.keys())
+            if hospital_dict[ID].num_patients/hospital_dict[ID].num_nurses > 4:
+                    reward -= 1
+            if hospital_dict[ID].num_patients/hospital_dict[ID].num_nurses < 4:
+                    reward += 1
     
     return hospital_dict, reward
 
@@ -202,6 +204,9 @@ def main():
     print(f"num_Q_entries_filled = {Q.num_Q_values_updated}")
     print(f"percent Q entries filled = {Q.num_Q_values_updated/total_Q_entries * 100} %")
 
+    print("saving Q table...")
+    Q.save_table()
+    print("Q table saved")
 
     #graph_care_ratio(picture)
 

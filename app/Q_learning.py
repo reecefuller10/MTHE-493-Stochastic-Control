@@ -352,6 +352,10 @@ class Q_table:
         
         print("New Q_val = ", self.table[state][action])
 
+    def save_table(self):
+        np.save("/Users/reecefuller/Documents/MTHE493/MTHE-493-Stochastic-Control/Q_table.npy",self.table)
+        np.save("/Users/reecefuller/Documents/MTHE493/MTHE-493-Stochastic-Control/actions.npy",self.actions)
+        np.save("/Users/reecefuller/Documents/MTHE493/MTHE-493-Stochastic-Control/states.npy",self.states)
 def main():
     q_table = Q_table(states = [1,2,3,4,5], actions = [1,2,3,4,5], learning_rate = 0.1, discount_factor = 0.9, gamma = 0.9)
     q_table.initialize_table()
