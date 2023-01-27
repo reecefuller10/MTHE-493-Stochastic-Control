@@ -17,6 +17,7 @@ from utils.transmission_helper import *
 from utils.graph_helper import *
 from utils.control_system_helper import *
 from Q_learning import *
+import pickle
 
 def evolve(hospital_dict,time_step):
 
@@ -36,7 +37,7 @@ def evolve(hospital_dict,time_step):
     for keys in hospital_dict.keys():
         care_array.append(hospital_dict[keys].care_ratio)
     
-    #depreciate
+    #depricate
     num_bad = 0
     for val in care_array:
         if val <= 0.5:
@@ -49,9 +50,10 @@ def evolve(hospital_dict,time_step):
     for ID in hospital_dict.keys():
         if hospital_dict[ID].num_nurses != 0:
         #temporary reward function
-            reward += hospital_dict[ID].care_ratio
-        
-    reward = reward/len(hospital_dict.keys())
+            if hospital_dict[ID].num_patients/hospital_dict[ID].num_nurses > 4:
+                    reward -= 1
+            if hospital_dict[ID].num_patients/hospital_dict[ID].num_nurses < 4:
+                    reward += 1
     
     return hospital_dict, reward
 
@@ -76,7 +78,8 @@ def main():
     Q.initialize_table()
 
     tok = time.time()
-    print(f"Q init time = {tok-tik}")
+    #print(f"Q init time = {tok-tik}")
+
 
     #print(f"Q.states = {Q.states}")
 
@@ -98,7 +101,7 @@ def main():
     picture = []
     t1 = time.time()
 
-    
+    quantized = True
 
     while(1):
 
@@ -111,7 +114,14 @@ def main():
 
         tic = time.time()
         #get initial state
-        state = get_state(hospital_dict)
+        if (quantized == False):
+            state = get_state(hospital_dict)
+
+        if (quantized == True):
+            state = get_state(hospital_dict)
+            state = quantize_state(hospital_dict,state, Q)
+
+
         #print('initial state = ',state)
         tok = time.time()
         #print('time to get state = ',tok-tic)
@@ -148,7 +158,11 @@ def main():
 
         #get the new state
         tik = time.time()
-        next_state = get_state(hospital_dict)
+        if(quantized == False):
+            next_state = get_state(hospital_dict)
+        if(quantized == True):
+            next_state = get_state(hospital_dict)
+            next_state = quantize_state(hospital_dict,next_state, Q)
         tok = time.time()
         #print('time to get next state = ',tok-tik)
 
@@ -159,7 +173,7 @@ def main():
         #print('time to get next state id = ',tok-tik)
 
         #debugging check
-        print('next state ID = ',next_state_ID)
+        #print('next state ID = ',next_state_ID)
         print('next state = ',next_state)
 
         #print('Reward = ', reward)
@@ -171,7 +185,7 @@ def main():
         tok = time.time()
         #print('time to learn = ',tok-tik)
         T2 = time.time()
-        print("total time = ",T2 - T1)
+        #print("total time = ",T2 - T1)
 
         #this is to graph the average care ratio over time after episodes are finished. I named it picture because I'm lazy (Copilot wrote this line lol)
         #picture.append(get_average_care_ratio(hospital_dict))
@@ -190,6 +204,9 @@ def main():
     print(f"num_Q_entries_filled = {Q.num_Q_values_updated}")
     print(f"percent Q entries filled = {Q.num_Q_values_updated/total_Q_entries * 100} %")
 
+    print("saving Q table...")
+    Q.save_table()
+    print("Q table saved")
 
     #graph_care_ratio(picture)
 
