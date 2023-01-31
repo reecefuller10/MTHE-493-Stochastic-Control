@@ -54,6 +54,8 @@ def evolve(hospital_dict,time_step):
                     reward -= 1
             if hospital_dict[ID].num_patients/hospital_dict[ID].num_nurses < 4:
                     reward += 1
+            if action[ID - 1] < 0 :
+                    reward -= 1
     
     return hospital_dict, reward
 
