@@ -44,23 +44,25 @@ def evolve(hospital_dict,time_step):
             num_bad += 1
             
 
-    reward = 0
+    cost = 0
 
     #a poorly implemented way to stop divide by 0 errors (might not be needed anymore)
     for ID in hospital_dict.keys():
         if hospital_dict[ID].num_nurses != 0:
         #temporary reward function
-            if hospital_dict[ID].num_patients/hospital_dict[ID].num_nurses > 4:
-                    reward -= 1
-            if hospital_dict[ID].num_patients/hospital_dict[ID].num_nurses < 4:
-                    reward += 1
+            if hospital_dict[ID].num_patients/hospital_dict[ID].num_nurses <= 4:
+                cost -= 1
+            elif hospital_dict[ID].num_patients/hospital_dict[ID].num_nurses < 8:
+                cost += 1
+            elif hospital_dict[ID].num_patients/hospital_dict[ID].num_nurses >= 8:
+                cost += 2
     
-    return hospital_dict, reward
+    return hospital_dict, cost
 
 def main():
 
     #create a dictionary storing objects that represent each hospital, indexed by ID
-    hospital_dict = create_data_dict(num= 5) 
+    hospital_dict = create_data_dict(num= 2) 
 
     #initialize a dictionary to represent the action space, indexed by time step
     #action_dict = create_action_dict(hospital_dict)
@@ -76,6 +78,8 @@ def main():
     Q.initalize_actions(hospital_dict)
     Q.initialize_states(hospital_dict)
     Q.initialize_table()
+    
+    print()
 
     tok = time.time()
     #print(f"Q init time = {tok-tik}")
@@ -93,7 +97,7 @@ def main():
 
 
     #number of episodes
-    end_time = 10000
+    end_time = 50000
     
     #evolution loop
     t = 0
@@ -135,7 +139,7 @@ def main():
         
         tik = time.time()
         #have the agent choose an action
-        action, action_ID = Q.choose_action(state_ID, hospital_dict)
+        action, action_ID = Q.choose_action(state_ID, hospital_dict,t)
         print('action = ',action)
         #print('found action id = ',action_ID)
         #debugging check
