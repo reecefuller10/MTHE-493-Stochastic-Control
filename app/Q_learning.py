@@ -117,7 +117,8 @@ def create_action_space(hospital_dict):
         nurses_dict[ID] = array
     
     #some wacky code that creates all possible action spaces (idfk how this works but it's exactly what we need)
-    comb_array = np.array(np.meshgrid(nurses_dict[1],nurses_dict[2],nurses_dict[3],nurses_dict[4],nurses_dict[5])).T.reshape(-1,5)
+    comb_array = np.array(np.meshgrid(nurses_dict[1],nurses_dict[2])).T.reshape(-1,2)
+    #comb_array = np.array(np.meshgrid(nurses_dict[1],nurses_dict[2],nurses_dict[3],nurses_dict[4],nurses_dict[5])).T.reshape(-1,5)
     
     #get the indices of all actions that sum to 0 (cant recieve more nurses than were transfered)
     keep_array = []
@@ -190,7 +191,7 @@ class Q_table:
         self.num_Q_values_updated = 0
         self.num_levels = 5
 
-    def initialize_quantized_states(self,hospital_dict, num_levels):
+    def initialize_quantized_states(self,hospital_dict, num_levels): #do not read ever
 
         quantized_dict = {}
         
@@ -234,7 +235,8 @@ class Q_table:
         #array where each entry is a possible state
         #No idea how this line works
 
-        comb_array = np.array(np.meshgrid(patients_dict[1],patients_dict[2],patients_dict[3],patients_dict[4],patients_dict[5])).T.reshape(-1,5)
+        #comb_array = np.array(np.meshgrid(patients_dict[1],patients_dict[2],patients_dict[3],patients_dict[4],patients_dict[5])).T.reshape(-1,5)
+        comb_array = np.array(np.meshgrid(patients_dict[1],patients_dict[2])).T.reshape(-1,2)
         
         self.states = comb_array
 
@@ -285,7 +287,7 @@ class Q_table:
         #initialize table with zeros (table is represented by a 2d array indexed as table[state][action] = Q_value)
         self.table = np.zeros(((self.states.shape)[0],(self.actions.shape)[0]))
         
-    def choose_action(self,state_ID,hospital_dict):
+    def choose_action(self,state_ID,hospital_dict,t):
 
         #Agent keeps picking unvalid actions not in the actions table (this is a temp fix) (TODO: figure out why this happens)
         non_valid = True
@@ -303,7 +305,7 @@ class Q_table:
                 #print("exploited action = ", action)
             
             #used range function because of error when converting iterator to scalar (h-1 is the problem) (TODO: Optimize this)
-            for h in range(1,6):
+            for h in range(1,3):
 
                 #fail case to handle if it picks an integer instead of a 5-tuple (TODO: stop this from happening)
                 try: 
@@ -329,7 +331,10 @@ class Q_table:
 
         #decay epsilonto bias exploitation over time
         if self.epsilon > self.epsilon_min:
-            self.epsilon *= self.epsilon_decay
+            if t == 0:
+                self.epsilon = 1
+            else:
+                self.epsilon *= 0.995
         
         #Get action ID
         for i in range(0,self.actions.shape[0]):
@@ -338,17 +343,18 @@ class Q_table:
 
                 idx = i
                 break
+        print("epsilon = ", self.epsilon)
 
         #return chosen action and its index
         return action, idx
 
-    def learn(self,state,action,reward,next_state):
+    def learn(self,state,action,cost,next_state):
 
         print("old Q Value = ", self.table[state][action])
         if self.table[state][action] == 0:
             self.num_Q_values_updated += 1
         #update Q value based on the Bellman equation (this is the ML component)
-        self.table[state][action] += self.learning_rate * (reward + self.discount_factor * self.table[next_state].max() - self.table[state][action])
+        self.table[state][action] += self.learning_rate * (cost + self.discount_factor * self.table[next_state].min() - self.table[state][action])
         
         print("New Q_val = ", self.table[state][action])
 
