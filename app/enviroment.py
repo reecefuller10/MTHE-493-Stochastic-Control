@@ -19,7 +19,7 @@ from utils.control_system_helper import *
 from Q_learning import *
 import pickle
 
-def evolve(hospital_dict,time_step):
+def evolve(hospital_dict,time_step, action):
 
     #call drift patients on every hospital
     for ID in hospital_dict.keys():
@@ -50,12 +50,14 @@ def evolve(hospital_dict,time_step):
     for ID in hospital_dict.keys():
         if hospital_dict[ID].num_nurses != 0:
         #temporary reward function
+
             if hospital_dict[ID].num_patients/hospital_dict[ID].num_nurses <= 4:
                 cost -= 1
             elif hospital_dict[ID].num_patients/hospital_dict[ID].num_nurses < 8:
                 cost += 1
             elif hospital_dict[ID].num_patients/hospital_dict[ID].num_nurses >= 8:
                 cost += 2
+
     
     return hospital_dict, cost
 
@@ -156,7 +158,7 @@ def main():
 
         #transition the sytstem to the next state and get the reward
         tik = time.time()
-        hospital_dict,reward = evolve(hospital_dict= hospital_dict, time_step= t)
+        hospital_dict,reward = evolve(hospital_dict= hospital_dict, time_step= t, action = action)
         tok = time.time()
         #print('time to evolve = ',tok-tik)
 
