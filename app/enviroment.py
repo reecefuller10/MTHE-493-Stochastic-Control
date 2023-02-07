@@ -47,17 +47,18 @@ def evolve(hospital_dict,time_step, action):
     cost = 0
 
     #a poorly implemented way to stop divide by 0 errors (might not be needed anymore)
-    for ID in hospital_dict.keys():
+     for ID in hospital_dict.keys():
         if hospital_dict[ID].num_nurses != 0:
         #temporary reward function
-
-            if hospital_dict[ID].num_patients/hospital_dict[ID].num_nurses <= 4:
+            care_r = hospital_dict[ID].num_patients/hospital_dict[ID].num_nurses
+            if care_r < 4:
                 cost -= 1
-            elif hospital_dict[ID].num_patients/hospital_dict[ID].num_nurses < 8:
+            elif care_r > 4 and care_r < 8:
                 cost += 1
-            elif hospital_dict[ID].num_patients/hospital_dict[ID].num_nurses >= 8:
-                cost += 2
-
+            elif care_r >= 8:
+                cost += np.exp(care_r)
+            if action[ID - 1] < 0 :
+                cost += action[ID-1]
     
     return hospital_dict, cost
 
