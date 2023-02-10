@@ -50,15 +50,22 @@ def evolve(hospital_dict,time_step):
     for ID in hospital_dict.keys():
         if hospital_dict[ID].num_nurses != 0:
         #temporary reward function
-            if hospital_dict[ID].num_patients/hospital_dict[ID].num_nurses <= 4:
-                cost -= 1
-            elif hospital_dict[ID].num_patients/hospital_dict[ID].num_nurses < 8:
+            if hospital_dict[ID].num_patients/hospital_dict[ID].num_nurses_unquantized <= 4:
+                cost -= 2
+            elif hospital_dict[ID].num_patients/hospital_dict[ID].num_nurses_unquantized < 7:
                 cost += 1
-            elif hospital_dict[ID].num_patients/hospital_dict[ID].num_nurses >= 8:
-                cost += 2
+            elif hospital_dict[ID].num_patients/hospital_dict[ID].num_nurses_unquantized >= 7:
+                cost += 3
+            elif hospital_dict[ID].num_patients/hospital_dict[ID].num_nurses_unquantized >= 25:
+                cost += 8
+        if hospital_dict[ID].num_nurses == 0:
+            cost += 100
+    
+    print(f"cost = {cost}")
     
     return hospital_dict, cost
 
+    
 def main():
 
     #create a dictionary storing objects that represent each hospital, indexed by ID
@@ -79,6 +86,10 @@ def main():
     Q.initialize_states(hospital_dict)
     Q.initialize_table()
     
+    
+
+    print(f"table dimensions = {np.shape(Q.table)}")
+    
     print()
 
     tok = time.time()
@@ -97,7 +108,7 @@ def main():
 
 
     #number of episodes
-    end_time = 50000
+    end_time = 100000
     
     #evolution loop
     t = 0
@@ -106,7 +117,19 @@ def main():
     t1 = time.time()
 
     quantized = True
+    optimal = False
+    no_Control = False
 
+    saved_states = []
+
+    care_ar = []
+
+    initial_total_pop = hospital_dict[1].total_population() + hospital_dict[2].total_population()
+
+
+    if optimal == True:
+        Q.table = np.load('/Users/reecefuller/Documents/MTHE493/MTHE-493-Stochastic-Control/Q_table.npy')
+        Q.remove_bad_actions()
     while(1):
 
         #Dynamically add empty control values for each hospital, at time step
@@ -120,11 +143,15 @@ def main():
         #get initial state
         if (quantized == False):
             state = get_state(hospital_dict)
-
         if (quantized == True):
             state = get_state(hospital_dict)
+            saved_states.append(get_state(hospital_dict))
+            print(f"state = {state}")
             state = quantize_state(hospital_dict,state, Q)
+            print(f"quantized state = {state}")
 
+        care_ar.append(hospital_dict[1].num_patients/hospital_dict[1].num_nurses_unquantized)
+        care_ar.append(hospital_dict[2].num_patients/hospital_dict[2].num_nurses_unquantized)
 
         #print('initial state = ',state)
         tok = time.time()
@@ -133,13 +160,24 @@ def main():
         #get ID of initial state
         tik = time.time()
         state_ID = get_state_ID(state,Q)
+
+        print(f'found state from id = {Q.states[state_ID]}')
+        print(f"state ID = {state_ID}")
         #print('initial state id = ',state_ID)
         tok = time.time()
         #print('time to get state id = ',tok-tic)
         
         tik = time.time()
         #have the agent choose an action
-        action, action_ID = Q.choose_action(state_ID, hospital_dict,t)
+        if optimal == False:
+            action, action_ID = Q.choose_action(state_ID, hospital_dict,t)
+        if optimal == True:
+            action, action_ID = Q.choose_optimal_action(state_ID, hospital_dict,t)
+            print(f"Q-value = {Q.table[state_ID,action_ID]}")
+        if no_Control == True:
+            action,action_ID = [0,0],0
+
+
         print('action = ',action)
         #print('found action id = ',action_ID)
         #debugging check
@@ -185,7 +223,8 @@ def main():
 
         #update the Q table
         tik = time.time()
-        Q.learn(state_ID, action_ID, reward, next_state_ID)
+        if optimal == False:
+            Q.learn(state_ID, action_ID, reward, next_state_ID)
         tok = time.time()
         #print('time to learn = ',tok-tik)
         T2 = time.time()
@@ -211,6 +250,18 @@ def main():
     print("saving Q table...")
     Q.save_table()
     print("Q table saved")
+
+    print(f"min care ratio = {np.min(care_ar)}")
+    print(f"max care ratio = {np.max(care_ar)}")
+    print(f'average care ratio = {np.mean(care_ar)}')
+    print(f"standard deviation of care ratio = {np.std(care_ar)}")
+
+    print(f'initial_total_pop = {initial_total_pop}')
+    print(f'final_total_pop = {hospital_dict[1].total_population() + hospital_dict[2].total_population()}')
+
+    plot_results(saved_states)
+
+    np.save("/Users/reecefuller/Documents/MTHE493/MTHE-493-Stochastic-Control/saved_states.npy",np.asarray(saved_states))
 
     #graph_care_ratio(picture)
 

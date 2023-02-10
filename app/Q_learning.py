@@ -16,7 +16,7 @@ class state:
         return self.sum == other.sum
     def __gt__(self, other): #greater than method for sorting
         return self.sum > other.sum
-
+'''
 def create_quantized_state_space(hospital_dict,num_levels):
 
     quantized_dict = {}
@@ -28,7 +28,7 @@ def create_quantized_state_space(hospital_dict,num_levels):
     comb_array = np.array(np.meshgrid(quantized_dict[1],quantized_dict[2],quantized_dict[3],quantized_dict[4],quantized_dict[5])).T.reshape(-1,5)
 
     return comb_array
-
+'''
 def quantize_state(hospital_dict,state,Q):
 
     N = Q.num_levels
@@ -36,10 +36,13 @@ def quantize_state(hospital_dict,state,Q):
     
     print(f"unquantized state = {state}")
 
-    for i in hospital_dict.keys():
+    for i in range(1,3):
         steps.append(m.ceil(hospital_dict[i].patient_capacity / N))
 
-    for i in range(len(state)):
+    
+    print(f"state before adding nurses = {state}")
+
+    for i in range(0,2): #(len(state))
         j = 1
         while(1):
             if state[i] <= steps[i]* j:
@@ -49,12 +52,9 @@ def quantize_state(hospital_dict,state,Q):
     print(f"quantized state = {state}")
 
     return state
-
-    
-
     
 #create an array with all possible states
-def create_state_space(hospital_dict):
+def create_state_space(hospital_dict): #doesnt do anything anymore i think
     
     N = 10 #number of partitions of the state space (for easier lookups later)
 
@@ -102,6 +102,8 @@ def create_state_space(hospital_dict):
                 partition_dict[i].append(object)
                 break
     
+    print(f'partition dict{partition_dict.keys()}')
+    
     
     #return all states
     return comb_array
@@ -139,6 +141,8 @@ def get_state(hospital_dict):
     #loop through all states and append
     for ID in hospital_dict.keys():
         state.append(hospital_dict[ID].num_patients)
+    for ID in hospital_dict.keys():
+        state.append(hospital_dict[ID].num_nurses)
 
     return state
 
@@ -217,27 +221,31 @@ class Q_table:
 
         #dict indexed by hospital ID representing the max number of patients at the hospital
         patients_dict = {}
+        nurses_dict = {}
         object_array = []
         
         #array of arrays where the inner index is all possible values for that hospital
         if(quantized == False):
             for ID in hospital_dict.keys():
                 array = np.linspace(0,hospital_dict[ID].patient_capacity,hospital_dict[ID].patient_capacity +1 ,True, dtype = int)
+                nurse_array = np.linspace(0,hospital_dict[ID].nurse_capacity,hospital_dict[ID].nurse_capacity +1 ,True, dtype = int)
                 #print(f"linspace array = {array}")
                 patients_dict[ID] = array
 
         if(quantized == True):
             for ID in hospital_dict.keys():
                 array = np.linspace(1,self.num_levels,self.num_levels ,True, dtype = int)
-                #print(f"linspace array = {array}")
+                nurse_array = np.linspace(0,hospital_dict[ID].nurse_capacity,hospital_dict[ID].nurse_capacity +1 ,True, dtype = int)
+                nurses_dict[ID] = nurse_array
                 patients_dict[ID] = array
 
         #array where each entry is a possible state
         #No idea how this line works
 
         #comb_array = np.array(np.meshgrid(patients_dict[1],patients_dict[2],patients_dict[3],patients_dict[4],patients_dict[5])).T.reshape(-1,5)
-        comb_array = np.array(np.meshgrid(patients_dict[1],patients_dict[2])).T.reshape(-1,2)
-        
+        comb_array = np.array(np.meshgrid(patients_dict[1],patients_dict[2],nurses_dict[1],nurses_dict[2]),).T.reshape(-1,4)
+       
+        print(comb_array)
         self.states = comb_array
 
         #print(comb_array)
@@ -300,12 +308,12 @@ class Q_table:
             #exploit
             else:
                 #action = self.table[state_ID].argmax()
-                action_idx = np.argmax(self.table[state_ID])
+                action_idx = np.argmin(self.table[state_ID])
                 action = self.actions[action_idx]
                 #print("exploited action = ", action)
             
             #used range function because of error when converting iterator to scalar (h-1 is the problem) (TODO: Optimize this)
-            for h in range(1,3):
+            for h in range(1,2):
 
                 #fail case to handle if it picks an integer instead of a 5-tuple (TODO: stop this from happening)
                 try: 
@@ -334,7 +342,7 @@ class Q_table:
             if t == 0:
                 self.epsilon = 1
             else:
-                self.epsilon *= 0.995
+                self.epsilon *= 0.999
         
         #Get action ID
         for i in range(0,self.actions.shape[0]):
@@ -344,6 +352,47 @@ class Q_table:
                 idx = i
                 break
         print("epsilon = ", self.epsilon)
+
+        #return chosen action and its index
+        return action, idx
+
+    def choose_optimal_action(self,state_ID,hospital_dict,t):
+        action_idx = np.argmin(self.table[state_ID])
+        action = self.actions[action_idx]
+
+        for h in range(1,3):
+
+                #fail case to handle if it picks an integer instead of a 5-tuple (TODO: stop this from happening)
+                try: 
+                    if action.type() == int.type(): break
+                except: 0
+               
+                #If we are removing nurses from a hospital, insure we are not removing more than there are at the hopsital.
+            
+                
+                if(action[h-1] < 0):
+                    if(hospital_dict[h].num_nurses + action[h-1] < 0):
+                        non_valid = True
+                        break
+                
+                #If we are adding nurses to a hospital, insure we are not adding more than the capacity
+                if(action[h-1] >= 0):
+                    if(hospital_dict[h].num_nurses + action[h-1] > hospital_dict[h].nurse_capacity):
+                        non_valid = True
+                        break
+
+                #if no fail cases are tripped, the action is valid
+                non_valid = False
+
+       
+        #Get action ID
+        for i in range(0,self.actions.shape[0]):
+
+            if np.array_equal(action,self.actions[i]):
+
+                idx = i
+                break
+
 
         #return chosen action and its index
         return action, idx
@@ -358,10 +407,20 @@ class Q_table:
         
         print("New Q_val = ", self.table[state][action])
 
+    def remove_bad_actions(self):
+        for i in range(self.states.shape[0]):
+            for j in range(self.actions.shape[0]):
+                if (self.states[i][2] < np.abs(self.actions[j][0]) and self.actions[j][0] <0) or (self.states[i][3] < np.abs(self.actions[j][1]) and self.actions[j][1] <0):
+                    self.table[i][j] = 10**10
+                
+
     def save_table(self):
         np.save("/Users/reecefuller/Documents/MTHE493/MTHE-493-Stochastic-Control/Q_table.npy",self.table)
         np.save("/Users/reecefuller/Documents/MTHE493/MTHE-493-Stochastic-Control/actions.npy",self.actions)
         np.save("/Users/reecefuller/Documents/MTHE493/MTHE-493-Stochastic-Control/states.npy",self.states)
+        
+
+
 def main():
     q_table = Q_table(states = [1,2,3,4,5], actions = [1,2,3,4,5], learning_rate = 0.1, discount_factor = 0.9, gamma = 0.9)
     q_table.initialize_table()
