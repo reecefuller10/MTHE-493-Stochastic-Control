@@ -34,13 +34,13 @@ def quantize_state(hospital_dict,state,Q):
     N = Q.num_levels
     steps = []
     
-    print(f"unquantized state = {state}")
+    #print(f"unquantized state = {state}")
 
     for i in range(1,3):
         steps.append(m.ceil(hospital_dict[i].patient_capacity / N))
 
     
-    print(f"state before adding nurses = {state}")
+    #print(f"state before adding nurses = {state}")
 
     for i in range(0,2): #(len(state))
         j = 1
@@ -49,7 +49,7 @@ def quantize_state(hospital_dict,state,Q):
                 state[i] = j
                 break
             j += 1
-    print(f"quantized state = {state}")
+    #print(f"quantized state = {state}")
 
     return state
     
@@ -67,7 +67,7 @@ def create_state_space(hospital_dict): #doesnt do anything anymore i think
     #array of arrays where the inner index is all possible values for that hospital
     for ID in hospital_dict.keys():
         array = np.linspace(1,hospital_dict[ID].patient_capacity,hospital_dict[ID].patient_capacity +1 ,True, dtype = int)
-        print(f"linspace array = {array}")
+        #print(f"linspace array = {array}")
         patients_dict[ID] = array
 
     #array where each entry is a possible state
@@ -88,21 +88,21 @@ def create_state_space(hospital_dict): #doesnt do anything anymore i think
     max = sorted_array[-1].sum
     buckets = np.linspace(min,max,N,True, dtype = int)
     buckets = np.delete(buckets,0)
-    print(f"buckets = {buckets}")
+    #print(f"buckets = {buckets}")
 
     for i in buckets:
         partition_dict[i] = []
     
-    print(partition_dict)
+    #print(partition_dict)
     
     for object in sorted_array:
         for i in buckets:
             if object.sum <= i:
-                print(f"bucket chose = {i} for a sum of {object.sum}")
+                #print(f"bucket chose = {i} for a sum of {object.sum}")
                 partition_dict[i].append(object)
                 break
     
-    print(f'partition dict{partition_dict.keys()}')
+    #print(f'partition dict{partition_dict.keys()}')
     
     
     #return all states
@@ -180,7 +180,7 @@ class Q_table:
     def __init__(self,learning_rate,discount_factor,gamma):
 
         #Hyperparamters
-        self.learning_rate = learning_rate
+        self.learning_rate = 1
         self.discount_factor = discount_factor
         self.gamma = gamma
 
@@ -294,6 +294,7 @@ class Q_table:
     def initialize_table(self):
         #initialize table with zeros (table is represented by a 2d array indexed as table[state][action] = Q_value)
         self.table = np.zeros(((self.states.shape)[0],(self.actions.shape)[0]))
+        self.counter = np.zeros(((self.states.shape)[0],(self.actions.shape)[0]))
         
     def choose_action(self,state_ID,hospital_dict,t):
 
@@ -351,7 +352,7 @@ class Q_table:
 
                 idx = i
                 break
-        print("epsilon = ", self.epsilon)
+        #print("epsilon = ", self.epsilon)
 
         #return chosen action and its index
         return action, idx
@@ -399,13 +400,14 @@ class Q_table:
 
     def learn(self,state,action,cost,next_state):
 
-        print("old Q Value = ", self.table[state][action])
+        #print("old Q Value = ", self.table[state][action])
         if self.table[state][action] == 0:
             self.num_Q_values_updated += 1
         #update Q value based on the Bellman equation (this is the ML component)
-        self.table[state][action] += self.learning_rate * (cost + self.discount_factor * self.table[next_state].min() - self.table[state][action])
+        self.table[state][action] += (1/(1+self.counter[state][action])) * (cost + self.discount_factor * self.table[next_state].min() - self.table[state][action])
+        self.counter[state][action] += 1
         
-        print("New Q_val = ", self.table[state][action])
+        #print("New Q_val = ", self.table[state][action])
 
     def remove_bad_actions(self):
         for i in range(self.states.shape[0]):
@@ -418,7 +420,7 @@ class Q_table:
         np.save("/Users/reecefuller/Documents/MTHE493/MTHE-493-Stochastic-Control/Q_table.npy",self.table)
         np.save("/Users/reecefuller/Documents/MTHE493/MTHE-493-Stochastic-Control/actions.npy",self.actions)
         np.save("/Users/reecefuller/Documents/MTHE493/MTHE-493-Stochastic-Control/states.npy",self.states)
-        
+    
 
 
 def main():

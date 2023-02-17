@@ -63,9 +63,9 @@ def create_data_dict(num):
     pop_infected = random.randint(1,int(pop_susceptible/2))
     pop_recovered = 0
     '''
-    nurse_capacity = 8
-    num_nurses = 4
-    patient_capacity = 250
+    nurse_capacity = 10
+    num_nurses = 5
+    patient_capacity = 300
     num_patients = 0
     care_ratio = num_patients/num_nurses
     pop_susceptible = 10*10**4
@@ -75,9 +75,9 @@ def create_data_dict(num):
     #creates a hospital object with the given attributes for each hospital and stores it in the dictionary (indexed by i)
     data_dict[1] = create_hospital(1,nurse_capacity, num_nurses, patient_capacity, num_patients, care_ratio, pop_susceptible, pop_infected, pop_recovered)
 
-    nurse_capacity = 8
-    num_nurses = 4
-    patient_capacity = 250
+    nurse_capacity = 10
+    num_nurses = 5
+    patient_capacity = 300
     num_patients = 0
     care_ratio = num_patients/num_nurses
     pop_susceptible = 10*10**4
@@ -117,7 +117,7 @@ def drift_patients(ID, hospital_dict, pop_susceptible, pop_infected, pop_hospita
     #hospital = hospital_dict[ID]
     
 
-    print(f"pop_hospitalized = {pop_hospitalized}")
+    #print(f"pop_hospitalized = {pop_hospitalized}")
     #definition of the rates defining the transition in between states
     rate_susceptibletoinfected = 1/75 * hospital_dict[ID].pop_susceptible                 #number of cases per day (different rates can be tested to see if they're stabilizable)
     rate_recoveredtoinfected = 1/1000 * hospital_dict[ID].pop_recovered                   #random number less than sesceptibletoinfected (needs changing)
@@ -139,7 +139,7 @@ def drift_patients(ID, hospital_dict, pop_susceptible, pop_infected, pop_hospita
     rate_hospitalizedtorecovered_bad = 1/20         #average number of days a patient spends in the hospital when the care ratio is bad
     '''
 
-    gamma_S2I = (1/50)*hospital_dict[ID].pop_susceptible #1/75 * 100000                 #number of cases per day (different rates can be tested to see if they're stabilizable)                   #random number less than sesceptibletoinfected (needs changing)
+    gamma_S2I = 1/65 * 100000                 #number of cases per day (different rates can be tested to see if they're stabilizable)                   #random number less than sesceptibletoinfected (needs changing)
     gamma_I2H = 1/2000   #number of hospitalizations 2020-2021 / number of confirmed cases 2020-2021 63961 / 2180000
     gamma_I2R = 1/14              #.1/1000       #An infected individual will be sick for 10 days on average
                                                          #on average hospitalized patients spent 14.7 days in the hospital
@@ -157,7 +157,7 @@ def drift_patients(ID, hospital_dict, pop_susceptible, pop_infected, pop_hospita
     T_I2R = np.random.binomial(pop_infected, gamma_I2R)
     T_H2R = np.random.binomial(pop_hospitalized, P5)
     T_R2I = np.random.poisson(gamma_R2I)
-    print(f"T_S2I = {T_S2I}, T_I2H = {T_I2H}, T_I2R = {T_I2R}, T_H2R = {T_H2R}, T_R2I = {T_R2I}")
+    #print(f"T_S2I = {T_S2I}, T_I2H = {T_I2H}, T_I2R = {T_I2R}, T_H2R = {T_H2R}, T_R2I = {T_R2I}")
 
     if pop_susceptible - T_S2I < 0:
         T_S2I = pop_susceptible

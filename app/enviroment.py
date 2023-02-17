@@ -19,7 +19,7 @@ from utils.control_system_helper import *
 from Q_learning import *
 import pickle
 
-def evolve(hospital_dict,time_step):
+def evolve(hospital_dict,time_step, action):
 
     #call drift patients on every hospital
     for ID in hospital_dict.keys():
@@ -50,18 +50,18 @@ def evolve(hospital_dict,time_step):
     for ID in hospital_dict.keys():
         if hospital_dict[ID].num_nurses != 0:
         #temporary reward function
-            if hospital_dict[ID].num_patients/hospital_dict[ID].num_nurses_unquantized <= 4:
-                cost -= 2
-            elif hospital_dict[ID].num_patients/hospital_dict[ID].num_nurses_unquantized < 7:
-                cost += 1
-            elif hospital_dict[ID].num_patients/hospital_dict[ID].num_nurses_unquantized >= 7:
-                cost += 3
-            elif hospital_dict[ID].num_patients/hospital_dict[ID].num_nurses_unquantized >= 25:
-                cost += 8
-        if hospital_dict[ID].num_nurses == 0:
+            care_r = hospital_dict[ID].num_patients/hospital_dict[ID].num_nurses_unquantized
+            if care_r <=4 :
+                cost += (1/16)*np.exp(care_r)
+            elif care_r > 4 and care_r < 8:
+                cost += 100
+            if action[ID - 1] < 0 :
+                cost += action[ID-1]
+            
+        else:
             cost += 100
     
-    print(f"cost = {cost}")
+    #print(f"cost = {cost}")
     
     return hospital_dict, cost
 
@@ -107,8 +107,9 @@ def main():
     #print(f"Q.table.shape() = {np.shape(Q.table)}")
 
 
-    #number of episodes
-    end_time = 100000
+    #number of epis
+    # odes
+    end_time = 1200
     
     #evolution loop
     t = 0
@@ -135,7 +136,9 @@ def main():
         #Dynamically add empty control values for each hospital, at time step
         #action_dict = increment_action_dict(hospital_dict, action_dict, t+1)
 
-        print("-------------------State data at time = " + str(t) + "-------------------")
+        #print("-------------------State data at time = " + str(t) + "-------------------")
+        if t%10000 == 0:
+            print('time = ',t)
         T1 = time.time()
 
 
@@ -146,9 +149,9 @@ def main():
         if (quantized == True):
             state = get_state(hospital_dict)
             saved_states.append(get_state(hospital_dict))
-            print(f"state = {state}")
+            #print(f"state = {state}")
             state = quantize_state(hospital_dict,state, Q)
-            print(f"quantized state = {state}")
+            #print(f"quantized state = {state}")
 
         care_ar.append(hospital_dict[1].num_patients/hospital_dict[1].num_nurses_unquantized)
         care_ar.append(hospital_dict[2].num_patients/hospital_dict[2].num_nurses_unquantized)
@@ -161,8 +164,8 @@ def main():
         tik = time.time()
         state_ID = get_state_ID(state,Q)
 
-        print(f'found state from id = {Q.states[state_ID]}')
-        print(f"state ID = {state_ID}")
+        #print(f'found state from id = {Q.states[state_ID]}')
+        #print(f"state ID = {state_ID}")
         #print('initial state id = ',state_ID)
         tok = time.time()
         #print('time to get state id = ',tok-tic)
@@ -173,12 +176,12 @@ def main():
             action, action_ID = Q.choose_action(state_ID, hospital_dict,t)
         if optimal == True:
             action, action_ID = Q.choose_optimal_action(state_ID, hospital_dict,t)
-            print(f"Q-value = {Q.table[state_ID,action_ID]}")
+            #print(f"Q-value = {Q.table[state_ID,action_ID]}")
         if no_Control == True:
             action,action_ID = [0,0],0
 
 
-        print('action = ',action)
+        #print('action = ',action)
         #print('found action id = ',action_ID)
         #debugging check
         tok = time.time()
@@ -190,11 +193,11 @@ def main():
         tok = time.time()
         #print('time to take action = ',tok-tik)
 
-        print_hospital_data(hospital_dict)
+        #print_hospital_data(hospital_dict)
 
         #transition the sytstem to the next state and get the reward
         tik = time.time()
-        hospital_dict,reward = evolve(hospital_dict= hospital_dict, time_step= t)
+        hospital_dict,reward = evolve(hospital_dict= hospital_dict, time_step= t, action = action)
         tok = time.time()
         #print('time to evolve = ',tok-tik)
 
@@ -216,7 +219,7 @@ def main():
 
         #debugging check
         #print('next state ID = ',next_state_ID)
-        print('next state = ',next_state)
+        #print('next state = ',next_state)
 
         #print('Reward = ', reward)
         #print_care_ratios(hospital_dict)
@@ -224,7 +227,8 @@ def main():
         #update the Q table
         tik = time.time()
         if optimal == False:
-            Q.learn(state_ID, action_ID, reward, next_state_ID)
+            pass
+            #Q.learn(state_ID, action_ID, reward, next_state_ID)
         tok = time.time()
         #print('time to learn = ',tok-tik)
         T2 = time.time()
@@ -233,7 +237,11 @@ def main():
         #this is to graph the average care ratio over time after episodes are finished. I named it picture because I'm lazy (Copilot wrote this line lol)
         #picture.append(get_average_care_ratio(hospital_dict))
         
-        
+        if t % 10000 == 0:
+            np.save("/Users/reecefuller/Documents/MTHE493/MTHE-493-Stochastic-Control/Q_table.npy",Q.table)
+            np.save("/Users/reecefuller/Documents/MTHE493/MTHE-493-Stochastic-Control/actions.npy",Q.actions)
+            np.save("/Users/reecefuller/Documents/MTHE493/MTHE-493-Stochastic-Control/states.npy",Q.states)
+
         t += 1
 
         #+1 since time is incrememented after state transition
