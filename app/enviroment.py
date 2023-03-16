@@ -22,7 +22,9 @@ import pickle
 def evolve(hospital_dict,time_step, action):
 
     #call drift patients on every hospital
+    
     for ID in hospital_dict.keys():
+        
         hospital_dict = drift_patients(ID,hospital_dict,hospital_dict[ID].pop_susceptible,hospital_dict[ID].pop_infected,hospital_dict[ID].num_patients,hospital_dict[ID].pop_recovered,time_step)
     '''
     for i in hospital_dict.keys():
@@ -109,7 +111,7 @@ def main():
 
     #number of epis
     # odes
-    end_time = 1200
+    end_time = 2500
     
     #evolution loop
     t = 0
@@ -119,11 +121,14 @@ def main():
 
     quantized = True
     optimal = False
-    no_Control = False
+    no_Control = True
 
     saved_states = []
 
     care_ar = []
+
+    reset_mod = [0,0]
+    modulo_vals = [300 + random.randint(-50,50),300 + random.randint(-50,50)]
 
     initial_total_pop = hospital_dict[1].total_population() + hospital_dict[2].total_population()
 

@@ -23,6 +23,8 @@ class Hospital:
         self.pop_susceptible =  pop_susceptible
         self.pop_infected = pop_infected
         self.pop_recovered = pop_recovered
+        self.modulo_val = 240 + random.randint(-50,50)
+        self.rest_mod = False
 
 
     def echo_care_ratio(self):
@@ -189,9 +191,10 @@ def drift_patients(ID, hospital_dict, pop_susceptible, pop_infected, pop_hospita
         pop_recovered = pop_recovered + T_I2R + T_H2R - T_R2I
 
         #To run through the simulation many times we will repeat after 240 days
-    if ((time_step + 1) % 240) == 0:
+    if ((time_step + 1) % (hospital_dict[ID].modulo_val)) == 0:
         pop_susceptible = pop_recovered
         pop_recovered = 0
+        hospital_dict[ID].modulo_val = 240 + random.randint(-50,50)
     #print(f"susceptible population = {pop_susceptible} susceptible to infected = {susceptible_to_infected} recovered to infected = {recovered_to_infected} infected to recovered = {infected_to_recovered} infected to hospitalized = {infected_to_hospitalized} hospitalized to recovered = {hospitalized_to_recovered}")
 
 
