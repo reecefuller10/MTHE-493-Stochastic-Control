@@ -19,13 +19,144 @@ from utils.control_system_helper import *
 from Q_learning import *
 import pickle
 
+def generate_losses(hospital_dict,ID):
+    '''
+    randomly generate the number of deaths that occur in the overflow queue based on n independent binomial trials with parameter p
+    where n is the number of patients in the overflow queue for 14 or more days, and p is the probability of death.
+    '''
+    
+    p = 0.3
+    print(f'array before deaths = {hospital_dict[ID].overflow_array}')
+    count = np.random.binomial(hospital_dict[ID].overflow_array[0],p)
+    print(f'num dead = {count}')
+    hospital_dict[ID].overflow_array[0] -= count
+    print(f'array after deaths = {hospital_dict[ID].overflow_array}')
+    hospital_dict[ID].num_deaths += count
+        
+    return hospital_dict
+
+def queue_evolve_v2(ID, hospital_dict,time_step, lam, mewGood, mewBad, mewMid):
+    '''
+    2nd version of the queuing evolution. This version has a queue to track the number of patients who were not admitted to the hospital.
+    Each time step, if there are people who were waiting for 14 or more days, they have a probability of dying given by n independent binomial distributions
+    with paramter p (see generate_losses()). This version prioritizes those in the overflow queue over those who arrived during the current time step.
+    '''
+
+    hospital_dict = generate_losses(hospital_dict, ID)
+    
+
+    QoC = hospital_dict[ID].num_patients/hospital_dict[ID].num_nurses_unquantized
+    
+    #calculate departures
+    if QoC < 2:
+        departures = np.random.poisson(mewGood)
+    elif QoC >= 2 and QoC <= 4:
+        departures = np.random.poisson(mewMid)
+    else:
+        departures = np.random.poisson(mewBad)
+
+    if ID == 1: print(f'departures = {departures}')
+
+    #update number of patients in hospital based on departures
+    hospital_dict[ID].num_patients = max(0, hospital_dict[ID].num_patients - departures)
+
+    #bring in patients from overflow queue
+    if ID == 1: print(f'number of patients before adding from overflow = {hospital_dict[ID].num_patients}')
+    for i in range(0,len(hospital_dict[ID].overflow_array)-1):
+
+        
+        if sum(hospital_dict[ID].overflow_array) == 0:
+            break
+
+        temp = hospital_dict[ID].overflow_array[i] + hospital_dict[ID].num_patients
+
+        if temp >= hospital_dict[ID].patient_capacity:
+            hospital_dict[ID].num_patients = hospital_dict[ID].patient_capacity
+            hospital_dict[ID].overflow_array[i] = temp - hospital_dict[ID].patient_capacity
+            break
+
+        else:
+            hospital_dict[ID].num_patients += hospital_dict[ID].overflow_array[i]
+            hospital_dict[ID].overflow_array[i] = 0
+        
+    if ID == 1: print(f'number of patients after adding from overflow = {hospital_dict[ID].num_patients}')
+    if ID == 1: print(f'new overflow queue = {hospital_dict[ID].overflow_array}')
+        
+  
+    #update overflow queue if there are still patients after filling the hospital
+    hospital_dict[ID].overflow_array[0] += hospital_dict[ID].overflow_array[1]
+
+    for i in range(1,len(hospital_dict[ID].overflow_array)-1):
+        hospital_dict[ID].overflow_array[i] = hospital_dict[ID].overflow_array[i+1]
+    
+    if ID == 1: print(f'queue after shift = {hospital_dict[ID].overflow_array}')
+
+    #calculate arrivals
+    arrivals = np.random.poisson(lam)
+
+    if ID == 1: print(f'arrivals = {arrivals}')
+
+    #update number of patients and overflow queue based on arrivals
+    new_total = hospital_dict[ID].num_patients + arrivals
+
+    if ID == 1: print(f'num patients (w/ overflow) + arrivals = {new_total}')
+
+    if new_total < hospital_dict[ID].patient_capacity:
+        hospital_dict[ID].num_patients = max(0,new_total)
+    else:
+        hospital_dict[ID].num_patients = hospital_dict[ID].patient_capacity
+        hospital_dict[ID].overflow_array[-1] = new_total - hospital_dict[ID].patient_capacity
+    
+    if ID == 1: print(f'final overflow queue = {hospital_dict[ID].overflow_array}')
+    if ID == 1: print(f'final number of patients = {hospital_dict[ID].num_patients}')
+    
+
+    return hospital_dict
+
+def queue_evolve(ID, hospital_dict,time_step, lam, mewGood, mewBad, mewMid):
+    '''
+    1st implementation of the queuing implentation. This version has a queue to track the number of patients who were not admitted to the hospital,
+    but does not differentiate between those who arrived during the current time step and those who have been waiting for multiple days. There is also
+    no chance of those in the overflow queue dying.
+    '''
+
+    QoC = hospital_dict[ID].num_patients/hospital_dict[ID].num_nurses_unquantized
+
+    arrivals = np.random.poisson(lam)
+
+    if QoC < 2:
+        departures = np.random.poisson(mewGood)
+    elif QoC >= 2 and QoC <= 4:
+        departures = np.random.poisson(mewMid)
+    else:
+        departures = np.random.poisson(mewBad)
+
+    delta = arrivals - departures
+
+    total_change = hospital_dict[ID].num_patients + delta + hospital_dict[ID].overflow
+
+    if total_change < hospital_dict[ID].patient_capacity:
+        hospital_dict[ID].num_patients = max(0,total_change)
+    elif total_change >= hospital_dict[ID].patient_capacity:
+        hospital_dict[ID].num_patients = hospital_dict[ID].patient_capacity
+        hospital_dict[ID].overflow = total_change - hospital_dict[ID].patient_capacity
+        
+
+    #L = max(0, hospital_dict[ID].num_patients + arrivals - departures)
+
+    #hospital_dict[ID].num_patients = L
+
+    return hospital_dict
+
 def evolve(hospital_dict,time_step, action):
 
     #call drift patients on every hospital
     
     for ID in hospital_dict.keys():
         
-        hospital_dict = drift_patients(ID,hospital_dict,hospital_dict[ID].pop_susceptible,hospital_dict[ID].pop_infected,hospital_dict[ID].num_patients,hospital_dict[ID].pop_recovered,time_step)
+        #hospital_dict = drift_patients(ID,hospital_dict,hospital_dict[ID].pop_susceptible,hospital_dict[ID].pop_infected,hospital_dict[ID].num_patients,hospital_dict[ID].pop_recovered,time_step)
+        #hospital_dict = queue_evolve(ID,hospital_dict,time_step, lam = 6.0, mewGood = 6.4, mewBad = 5.9, mewMid = 6.01)
+        hospital_dict = queue_evolve_v2(ID,hospital_dict,time_step, lam = 6.0, mewGood = 6.4, mewBad = 5.9, mewMid = 6.01)
     '''
     for i in hospital_dict.keys():
         print(f"pop_infected = {hospital_dict[i].pop_infected}")
@@ -111,7 +242,7 @@ def main():
 
     #number of epis
     # odes
-    end_time = 2500
+    end_time = 15000
     
     #evolution loop
     t = 0
@@ -127,8 +258,10 @@ def main():
 
     care_ar = []
 
-    reset_mod = [0,0]
-    modulo_vals = [300 + random.randint(-50,50),300 + random.randint(-50,50)]
+
+
+
+    
 
     initial_total_pop = hospital_dict[1].total_population() + hospital_dict[2].total_population()
 
@@ -143,7 +276,7 @@ def main():
 
         #print("-------------------State data at time = " + str(t) + "-------------------")
         if t%10000 == 0:
-            print('time = ',t)
+            print('time step = ',t)
         T1 = time.time()
 
 
@@ -232,8 +365,7 @@ def main():
         #update the Q table
         tik = time.time()
         if optimal == False:
-            pass
-            #Q.learn(state_ID, action_ID, reward, next_state_ID)
+            Q.learn(state_ID, action_ID, reward, next_state_ID)
         tok = time.time()
         #print('time to learn = ',tok-tik)
         T2 = time.time()
@@ -242,7 +374,7 @@ def main():
         #this is to graph the average care ratio over time after episodes are finished. I named it picture because I'm lazy (Copilot wrote this line lol)
         #picture.append(get_average_care_ratio(hospital_dict))
         
-        if t % 10000 == 0:
+        if t % 10000 == 0 and optimal == False and no_Control == False:
             np.save("/Users/reecefuller/Documents/MTHE493/MTHE-493-Stochastic-Control/Q_table.npy",Q.table)
             np.save("/Users/reecefuller/Documents/MTHE493/MTHE-493-Stochastic-Control/actions.npy",Q.actions)
             np.save("/Users/reecefuller/Documents/MTHE493/MTHE-493-Stochastic-Control/states.npy",Q.states)
@@ -253,7 +385,10 @@ def main():
         if t == end_time + 1 : break
 
     t2 = time.time()
-    print('time = ',t2-t1)
+    print(f'time = {t2-t1} s')
+
+    for i in hospital_dict.keys():
+        print(f'number of deaths in hospital {i} = {hospital_dict[i].num_deaths}')
 
     total_Q_entries = Q.table.shape[0]*Q.table.shape[1]
     print(f"total_Q_entries = {total_Q_entries}")
@@ -261,7 +396,8 @@ def main():
     print(f"percent Q entries filled = {Q.num_Q_values_updated/total_Q_entries * 100} %")
 
     print("saving Q table...")
-    Q.save_table()
+    if optimal == False and no_Control == False:
+        Q.save_table()
     print("Q table saved")
 
     print(f"min care ratio = {np.min(care_ar)}")

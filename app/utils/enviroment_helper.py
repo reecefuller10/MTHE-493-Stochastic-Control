@@ -23,8 +23,12 @@ class Hospital:
         self.pop_susceptible =  pop_susceptible
         self.pop_infected = pop_infected
         self.pop_recovered = pop_recovered
-        self.modulo_val = 240 + random.randint(-50,50)
+        self.modulo_val = 400 + random.randint(-100,500)
         self.rest_mod = False
+        self.overflow = 0
+        self.overflow_array = [0 for i in range (0,14)]
+        self.num_deaths = 0
+        
 
 
     def echo_care_ratio(self):
@@ -148,7 +152,7 @@ def drift_patients(ID, hospital_dict, pop_susceptible, pop_infected, pop_hospita
     gamma_R2I = 1/200 * hospital_dict[ID].pop_recovered
     gamma_H2Rgood = 1/10        #average number of days a patient spends in the hospital when the care ratio is good
     gamma_H2Rbad = 1/25         #average number of days a patient spends in the hospital when the care ratio is bad
-
+    gamma_R2S = 3/4
     if pop_hospitalized/(hospital_dict[ID].num_nurses_unquantized) < 4:
         P5 = gamma_H2Rgood
     else:
@@ -159,13 +163,14 @@ def drift_patients(ID, hospital_dict, pop_susceptible, pop_infected, pop_hospita
     T_I2R = np.random.binomial(pop_infected, gamma_I2R)
     T_H2R = np.random.binomial(pop_hospitalized, P5)
     T_R2I = np.random.poisson(gamma_R2I)
+    T_R2S = np.random.binomial(pop_recovered, gamma_R2S)
     #print(f"T_S2I = {T_S2I}, T_I2H = {T_I2H}, T_I2R = {T_I2R}, T_H2R = {T_H2R}, T_R2I = {T_R2I}")
 
-    if pop_susceptible - T_S2I < 0:
+    if pop_susceptible - T_S2I + T_R2S < 0:
         T_S2I = pop_susceptible
         pop_susceptible = 0
     else:
-        pop_susceptible = pop_susceptible - T_S2I
+        pop_susceptible = pop_susceptible - T_S2I + T_R2S
 
     #Evolution of infected population
     if pop_infected - T_I2H - T_I2R + T_S2I + T_R2I < 0:
@@ -183,31 +188,33 @@ def drift_patients(ID, hospital_dict, pop_susceptible, pop_infected, pop_hospita
     else:
         pop_hospitalized = pop_hospitalized + T_I2H - T_H2R
 
+    if pop_hospitalized > hospital_dict[ID].patient_capacity:
+        #print(f"tripped at pop_hospitalized = {pop_hospitalized}")
+        delta = pop_hospitalized - hospital_dict[ID].patient_capacity
+        #print(f"delta = {delta}")
+        pop_hospitalized -= delta
+        pop_infected += delta
+        #print(f"pop_hospitalized = {pop_hospitalized}, pop_susceptible = {pop_susceptible}")
+
+
     #Evolution of recovered population
-    if pop_recovered + T_I2R + T_H2R - T_R2I < 0:
+    if pop_recovered + T_I2R + T_H2R - T_R2I - T_R2S < 0:
+        T_R2S = 0
         T_R2I = pop_recovered
         pop_recovered = T_I2R + T_H2R
     else:
-        pop_recovered = pop_recovered + T_I2R + T_H2R - T_R2I
+        pop_recovered = pop_recovered + T_I2R + T_H2R - T_R2I - T_R2S
 
         #To run through the simulation many times we will repeat after 240 days
+    '''
     if ((time_step + 1) % (hospital_dict[ID].modulo_val)) == 0:
-        pop_susceptible = pop_recovered
+        #print(f'time step = {time_step} modulo_val = {hospital_dict[ID].modulo_val}')
+        pop_susceptible += pop_recovered
         pop_recovered = 0
-        hospital_dict[ID].modulo_val = 240 + random.randint(-50,50)
+        hospital_dict[ID].modulo_val = time_step + 300 + random.randint(-100,200)
+    '''
     #print(f"susceptible population = {pop_susceptible} susceptible to infected = {susceptible_to_infected} recovered to infected = {recovered_to_infected} infected to recovered = {infected_to_recovered} infected to hospitalized = {infected_to_hospitalized} hospitalized to recovered = {hospitalized_to_recovered}")
 
-
-    if pop_susceptible < 0:
-        pop_susceptible = 0
-    if pop_infected < 0:
-        pop_infected = 0
-    if pop_infected < 0:
-        pop_infected = 0
-    if pop_hospitalized < 0:
-        pop_hospitalized = 0
-    if pop_recovered < 0:
-        pop_recovered = 0
 
 
     hospital_dict[ID].num_patients = pop_hospitalized
@@ -222,6 +229,8 @@ def drift_patients(ID, hospital_dict, pop_susceptible, pop_infected, pop_hospita
         pop_hospitalized = hospital_dict[ID].patient_capacity
         hospital_dict[ID].care_ratio = hospital_dict[ID].num_patients/hospital_dict[ID].num_nurses
         return hospital_dict
+    
+    #print(f"total population = {hospital_dict[ID].total_population()}")
 
     return hospital_dict
 
@@ -283,9 +292,9 @@ def plot_results(states):
     #plot the results
 
     #axes[0][0].hexbin(x=np.linspace(0,len(patients_1),len(patients_1)),y=patients_1,gridsize=(50,50),cmap=plt.cm.Blues)
-    axes[0][0].scatter(x=np.linspace(0,len(patients_1),len(patients_1)),y=patients_1,s=1)
+    axes[0][0].scatter(x=np.linspace(0,len(patients_1),len(patients_1)),y=patients_1,s=0.5)
     axes[0][0].set_title('Hospital 1')
-    axes[0][1].scatter(x=np.linspace(0,len(patients_2),len(patients_2)),y=patients_2, s=1)
+    axes[0][1].scatter(x=np.linspace(0,len(patients_2),len(patients_2)),y=patients_2, s=0.5)
     axes[0][1].set_title('Hospital 2')
     axes[1][0].scatter(x=np.linspace(0,len(nurses_1),len(nurses_1)),y=nurses_1, s=1)
 

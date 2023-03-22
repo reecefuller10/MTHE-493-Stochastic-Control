@@ -46,7 +46,9 @@ def quantize_state(hospital_dict,state,Q):
         j = 1
         while(1):
             if state[i] <= steps[i]* j:
+                
                 state[i] = j
+                
                 break
             j += 1
     #print(f"quantized state = {state}")
@@ -156,6 +158,7 @@ def get_state_ID(state,Q):
     for i in buckets:
         if state_sum <= i:
             search_supremum = i
+            #print(f"search supremum = {search_supremum}")
             break
 
     search_array = Q.partitioned_states[search_supremum]
@@ -215,7 +218,7 @@ class Q_table:
         #self.states = create_state_space(hospital_dict)
         quantized = True
 
-        N = 5 #number of partitions of the state space (for easier lookups later)
+        N = 10 #number of partitions of the state space (for easier lookups later)
 
         #going to index each possible state by a number
 
@@ -245,7 +248,7 @@ class Q_table:
         #comb_array = np.array(np.meshgrid(patients_dict[1],patients_dict[2],patients_dict[3],patients_dict[4],patients_dict[5])).T.reshape(-1,5)
         comb_array = np.array(np.meshgrid(patients_dict[1],patients_dict[2],nurses_dict[1],nurses_dict[2]),).T.reshape(-1,4)
        
-        print(comb_array)
+        #print(comb_array)
         self.states = comb_array
 
         #print(comb_array)
@@ -273,7 +276,7 @@ class Q_table:
         max = sorted_array[-1].sum
         buckets = np.linspace(min,max,N,True, dtype = int)
         buckets = np.delete(buckets,0)
-        #print(f"buckets = {buckets}")
+        print(f"buckets = {buckets}")
 
         for i in buckets:
             partition_dict[i] = []
@@ -417,7 +420,7 @@ class Q_table:
                 
 
     def save_table(self):
-        np.save("/Users/reecefuller/Documents/MTHE493/MTHE-493-Stochastic-Control/Q_table.npy",self.table)
+        np.save("/Users/reecefuller/Documents/MTHE493/MTHE-493-Stochastic-Control/table.npy",self.table)
         np.save("/Users/reecefuller/Documents/MTHE493/MTHE-493-Stochastic-Control/actions.npy",self.actions)
         np.save("/Users/reecefuller/Documents/MTHE493/MTHE-493-Stochastic-Control/states.npy",self.states)
     
