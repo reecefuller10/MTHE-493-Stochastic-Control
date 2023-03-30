@@ -75,6 +75,8 @@ def create_state_space(hospital_dict): #doesnt do anything anymore i think
     #array where each entry is a possible state
     #No idea how this line works
     comb_array = np.array(np.meshgrid(patients_dict[1],patients_dict[2],patients_dict[3],patients_dict[4],patients_dict[5])).T.reshape(-1,5)
+
+
   
     for i in range(len(comb_array)):
         value = state(i,comb_array[i])
@@ -104,6 +106,8 @@ def create_state_space(hospital_dict): #doesnt do anything anymore i think
                 partition_dict[i].append(object)
                 break
     
+    
+    
     #print(f'partition dict{partition_dict.keys()}')
     
     
@@ -117,21 +121,24 @@ def create_action_space(hospital_dict):
 
     #creates an array of arrays where the inside arrays varries over al possible nurse transfers
     for ID in hospital_dict.keys():
-        array = np.linspace(-1*hospital_dict[ID].nurse_capacity, hospital_dict[ID].nurse_capacity,2*hospital_dict[ID].nurse_capacity +1 , True, dtype = int)
+        #array = np.linspace(-1*hospital_dict[ID].nurse_capacity, hospital_dict[ID].nurse_capacity,2*hospital_dict[ID].nurse_capacity +1 , True, dtype = int)
+        array = np.linspace(1, hospital_dict[ID].nurse_capacity,hospital_dict[ID].nurse_capacity +1 , True, dtype = int)
         nurses_dict[ID] = array
     
     #some wacky code that creates all possible action spaces (idfk how this works but it's exactly what we need)
     comb_array = np.array(np.meshgrid(nurses_dict[1],nurses_dict[2])).T.reshape(-1,2)
+    
     #comb_array = np.array(np.meshgrid(nurses_dict[1],nurses_dict[2],nurses_dict[3],nurses_dict[4],nurses_dict[5])).T.reshape(-1,5)
     
     #get the indices of all actions that sum to 0 (cant recieve more nurses than were transfered)
     keep_array = []
     for i in range(len(comb_array)):
-        if np.sum(comb_array[i]) == 0:
+        if np.sum(comb_array[i]) == 10:
             keep_array.append(i)
     
     #only keep valid actions
     comb_array = comb_array[keep_array]
+    print(f'action space = {comb_array}')
 
     #returns all possible actions
     return comb_array
@@ -189,8 +196,8 @@ class Q_table:
 
         #epsilon controlls how often the agent explores vs exploits
         self.epsilon = 1
-        self.epsilon_min = 0.01
-        self.epsilon_decay = 0.995
+        self.epsilon_min = 0.1
+        self.epsilon_decay = 0.999
 
         self.table = 0
         self.actions = 0
@@ -250,6 +257,7 @@ class Q_table:
        
         #print(comb_array)
         self.states = comb_array
+        print(self.states)
 
         #print(comb_array)
         #print(comb_array[0])
