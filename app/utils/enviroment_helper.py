@@ -30,6 +30,7 @@ class Hospital:
         self.num_deaths = 0
         self.deaths_delta = 0
         self.prev_nurses = 5
+        self.total_overflow = 0
         
 
 

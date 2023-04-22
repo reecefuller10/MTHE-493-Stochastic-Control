@@ -314,16 +314,17 @@ class Q_table:
         while(non_valid == True):
 
             #explore
-            if rand.random() < self.epsilon:
+            if 1 :#rand.random() < self.epsilon:
                 action = rand.choice(self.actions)
                 
             #exploit
+            '''
             else:
                 #action = self.table[state_ID].argmax()
                 action_idx = np.argmin(self.table[state_ID])
                 action = self.actions[action_idx]
                 #print("exploited action = ", action)
-            
+            '''
             #used range function because of error when converting iterator to scalar (h-1 is the problem) (TODO: Optimize this)
             for h in range(1,2):
 

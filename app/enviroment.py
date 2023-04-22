@@ -27,15 +27,22 @@ def generate_losses(hospital_dict,ID):
     where n is the number of patients in the overflow queue for 14 or more days, and p is the probability of death.
     '''
     
-    p = 0.5
-    #print(f'array before deaths = {hospital_dict[ID].overflow_array}')
+    p = 0.1
+    '''#print(f'array before deaths = {hospital_dict[ID].overflow_array}')
     count = np.random.binomial(hospital_dict[ID].overflow_array[0],p)
     #print(f'num dead = {count}')
     hospital_dict[ID].overflow_array[0] -= count
     #print(f'array after deaths = {hospital_dict[ID].overflow_array}')
     hospital_dict[ID].num_deaths += count
+    hospital_dict[ID].deaths_delta = count'''
+    count = np.random.binomial(hospital_dict[ID].total_overflow,p)
+    #print(f'num dead = {count}')
+    hospital_dict[ID].total_overflow -= count
+    #print(f'array after deaths = {hospital_dict[ID].overflow_array}')
+    hospital_dict[ID].num_deaths += count
     hospital_dict[ID].deaths_delta = count
-        
+    print(f'new deaths = {hospital_dict[ID].deaths_delta}')
+
     return hospital_dict
 
 def queue_evolve_v2(ID, hospital_dict,time_step, lam, mewGood, mewBad, mewMid):
@@ -61,7 +68,7 @@ def queue_evolve_v2(ID, hospital_dict,time_step, lam, mewGood, mewBad, mewMid):
     '''
 
     if QoC < 6:
-        departures = np.random.poisson(6.25-((0.36)/6)*QoC)
+        departures = np.random.poisson(6.25-((0.35)/6)*QoC)
     else:
         departures = np.random.poisson(mewBad)
 
@@ -72,7 +79,7 @@ def queue_evolve_v2(ID, hospital_dict,time_step, lam, mewGood, mewBad, mewMid):
 
     #bring in patients from overflow queue
     #if ID == 1: print(f'number of patients before adding from overflow = {hospital_dict[ID].num_patients}')
-    for i in range(0,len(hospital_dict[ID].overflow_array)-1):
+    '''for i in range(0,len(hospital_dict[ID].overflow_array)-1):
 
         
         if sum(hospital_dict[ID].overflow_array) == 0:
@@ -118,8 +125,50 @@ def queue_evolve_v2(ID, hospital_dict,time_step, lam, mewGood, mewBad, mewMid):
         
     else:
         hospital_dict[ID].num_patients = hospital_dict[ID].patient_capacity
-        hospital_dict[ID].overflow_array[-1] = new_total - hospital_dict[ID].patient_capacity
+        hospital_dict[ID].overflow_array[-1] = new_total - hospital_dict[ID].patient_capacity'''
     
+    
+    temp = hospital_dict[ID].total_overflow + hospital_dict[ID].num_patients
+
+    if temp >= hospital_dict[ID].patient_capacity:
+        hospital_dict[ID].num_patients = hospital_dict[ID].patient_capacity
+        hospital_dict[ID].total_overflow = temp - hospital_dict[ID].patient_capacity
+
+    else:
+        hospital_dict[ID].num_patients += hospital_dict[ID].total_overflow
+        hospital_dict[ID].total_overflow = 0
+    
+    #if ID == 1: print(f'number of patients after adding from overflow = {hospital_dict[ID].num_patients}')
+    #if ID == 1: print(f'new overflow queue = {hospital_dict[ID].overflow_array}')
+        
+  
+    #update overflow queue if there are still patients after filling the hospital
+    
+    #if ID == 1: print(f'queue after shift = {hospital_dict[ID].overflow_array}')
+
+    #calculate arrivals
+    arrivals = np.random.poisson(lam)
+
+    #if ID == 1: print(f'arrivals = {arrivals}')
+
+    #update number of patients and overflow queue based on arrivals
+    new_total = hospital_dict[ID].num_patients + arrivals
+
+    #if ID == 1: print(f'num patients (w/ overflow) + arrivals = {new_total}')
+
+    if new_total < hospital_dict[ID].patient_capacity:
+        hospital_dict[ID].num_patients = max(0,new_total)
+        
+    else:
+        hospital_dict[ID].num_patients = hospital_dict[ID].patient_capacity
+        hospital_dict[ID].total_overflow += new_total - hospital_dict[ID].patient_capacity
+    
+    if(ID == 1):
+        print(f'arrivals = {arrivals}')
+        print(f'departures = {departures}')
+        print(f'num patients = {hospital_dict[ID].num_patients}')
+        print(f'final overflow = {hospital_dict[ID].total_overflow}')
+
     #if ID == 1: print(f'final overflow queue = {hospital_dict[ID].overflow_array}')
     #if ID == 1: print(f'final number of patients = {hospital_dict[ID].num_patients}')
     
@@ -279,7 +328,7 @@ def main():
 
     #number of epis
     # odes
-    end_time = 2000
+    end_time = 100000
     
     #evolution loop
     t = 0
@@ -288,7 +337,7 @@ def main():
     t1 = time.time()
 
     quantized = True
-    optimal = True
+    optimal = False
     no_Control = False
 
     saved_states = []
@@ -339,14 +388,14 @@ def main():
         #print('time to get state = ',tok-tic)
 
         #get ID of initial state
-
+        tic = time.time()
         state_ID = get_state_ID(state,Q)
-
+        tok = time.time()
         #print(f'found state from id = {Q.states[state_ID]}')
         #print(f"state ID = {state_ID}")
         #print('initial state id = ',state_ID)
 
-        #print('time to get state id = ',tok-tic)
+        print('time to get state id = ',tok-tic)
         
 
         #have the agent choose an action
