@@ -21,6 +21,7 @@ import pickle
 
 
 
+
 def generate_losses(hospital_dict,ID):
     '''
     randomly generate the number of deaths that occur in the overflow queue based on n independent binomial trials with parameter p
@@ -210,6 +211,7 @@ def queue_evolve(ID, hospital_dict,time_step, lam, mewGood, mewBad, mewMid):
 
     return hospital_dict
 
+
 def evolve(hospital_dict,time_step, action):
 
     #call drift patients on every hospital
@@ -249,6 +251,7 @@ def evolve(hospital_dict,time_step, action):
         hospital_dict[ID].deaths_delta = 0
         if hospital_dict[ID].num_nurses != 0:
         #temporary reward function
+
             care_r = hospital_dict[ID].num_patients/hospital_dict[ID].num_nurses_unquantized
             if care_r >= 0 and care_r < 4:
                 cost += (20/3)*care_r - 10
@@ -279,7 +282,7 @@ def evolve(hospital_dict,time_step, action):
         #print(f'cost = {cost}')
 
     
-    
+  
 
     
     return hospital_dict, cost
@@ -428,7 +431,9 @@ def main():
         #print_hospital_data(hospital_dict)
 
         #transition the sytstem to the next state and get the reward
+
         hospital_dict,reward = evolve(hospital_dict= hospital_dict, time_step= t, action = action)
+
         #print('time to evolve = ',tok-tik)
 
         for i in hospital_dict.keys():
