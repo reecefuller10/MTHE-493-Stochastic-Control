@@ -2,25 +2,15 @@ import random
 import sys
 import time
 
-import networkx as nx
 import numpy as np
-import pandas as pd
-
-# Change this path to /you/path/here/MTHE-493-Stochastic-Control/app/utils
-# sys.path.append(r'C:\Users\Gmack\MTHE-493-Stochastic-Control\app\utils')
-sys.path.append('/Users/reecefuller/Documents/MTHE-493-Stochastic-Control/app/utils')
-
-# print(sys.path)
-
-import pickle
-
 from Q_learning import *
 from utils.control_system_helper import *
-
-# Import functions from helper files
 from utils.enviroment_helper import *
 from utils.graph_helper import *
 from utils.transmission_helper import *
+
+# Change this path to /you/path/here/MTHE-493-Stochastic-Control/app/utils
+sys.path.append('/Users/reecefuller/Documents/MTHE-493-Stochastic-Control/app/utils')
 
 
 def generate_losses(hospital_dict, ID):
@@ -32,6 +22,7 @@ def generate_losses(hospital_dict, ID):
     p = 0.5
 
     count = np.random.binomial(hospital_dict[ID].overflow_array[0], p)
+
     hospital_dict[ID].overflow_array[0] -= count
     hospital_dict[ID].num_deaths += count
     hospital_dict[ID].deaths_delta = count
@@ -48,6 +39,7 @@ def queue_evolve_v2(ID, hospital_dict, lam, mewBad):
 
     hospital_dict = generate_losses(hospital_dict, ID)
 
+    # Quality of care Ratio
     QoC = hospital_dict[ID].num_patients / (hospital_dict[ID].num_nurses * 6)
 
     if QoC < 6:
@@ -136,10 +128,26 @@ def queue_evolve(ID, hospital_dict, lam, mewGood, mewBad, mewMid):
 
 def evolve(hospital_dict, time_step, action):
 
-    # call drift patients on every hospital
-
     for ID in hospital_dict.keys():
+        '''
+        # Original version using  a non-markovian transition kernel
+        hospital_dict = drift_patients(
+            ID,
+            hospital_dict,
+            hospital_dict[ID].pop_susceptible,
+            hospital_dict[ID].pop_infected,
+            hospital_dict[ID].num_patients,
+            hospital_dict[ID].pop_recovered,
+            time_step,
+        )
 
+        # Use first queueing model
+        hospital_dict = queue_evolve(
+            ID, hospital_dict, time_step, lam=6.0, mewGood=6.4, mewBad=5.9, mewMid=6.01
+        )
+        '''
+
+        # Use second (and optimal) queueing model
         hospital_dict = queue_evolve_v2(
             ID, hospital_dict, time_step, lam=6.0, mewGood=6.25, mewBad=5.9, mewMid=6.01
         )
@@ -151,20 +159,19 @@ def evolve(hospital_dict, time_step, action):
 
     cost = 0
 
+    # calculate cost of action
     for ID in hospital_dict.keys():
 
-        if action[ID - 1] < hospital_dict[ID].prev_nurses:
-            cost_nurses = (hospital_dict[ID].prev_nurses - action[ID - 1]) * 6
-            print(f'nurse cost = {cost_nurses}')
-            cost += cost_nurses
+        if (
+            action[ID - 1] < hospital_dict[ID].prev_nurses
+        ):  # ID -1 because ID starts at 1 but action starts at 0
+            cost += -1 * (action[ID - 1] - hospital_dict[ID].prev_nurses) * 6
 
             hospital_dict[ID].total_transfers += -1 * (
                 action[ID - 1] - hospital_dict[ID].prev_nurses
             )
 
-        if hospital_dict[ID].num_patients >= 0.75 * hospital_dict[ID].patient_capacity:
-            pass
-
+        hospital_dict[ID].total_untreated += sum(hospital_dict[ID].overflow_array)
         cost += hospital_dict[ID].deaths_delta * 40
 
     return hospital_dict, cost
@@ -185,17 +192,18 @@ def main():
     Q.initialize_states(hospital_dict)
     Q.initialize_table()
 
-    print(f"table dimensions = {np.shape(Q.table)}")
-
-    print()
-
     # number of episodes
-    end_time = 5000000
+    end_time = 3500
 
     t = 0
 
+    # quantize action space to reduce size of Q-table
     quantized = True
-    optimal = False
+
+    # If optimal is true, the agent will choose the action with the highest Q-value from the previous
+    optimal = True
+
+    # Used to benchmark the system without control
     no_Control = False
 
     saved_states = []
@@ -205,108 +213,118 @@ def main():
 
     running_cost = 0
 
+    total_untreated = 0
+
+    total_deaths = 0
+
+    total_transfers = 0
+
     initial_total_pop = (
         hospital_dict[1].total_population() + hospital_dict[2].total_population()
     )
+    average_cost = 0
+    end = 500
 
     if optimal == True:
         Q.table = np.load(
             '/Users/reecefuller/Documents/MTHE-493-Stochastic-Control/Q_table.npy'
         )
 
-    while 1:
+    for i in range(0, end):
+        hospital_dict = create_data_dict(num=2)
 
-        # Dynamically add empty control values for each hospital, at time step
+        t = 0
+        running_cost = 0
+        print(f'trial {i}:')
 
-        if t % 10000 == 0:
-            print('time step = ', t)
+        while 1:
 
-        # get initial state
-        if quantized == False:
-            state = get_state(hospital_dict)
-        if quantized == True:
-            state = get_state(hospital_dict)
-            saved_states.append(get_state(hospital_dict))
-            saved_nurses.append(
-                [hospital_dict[1].num_nurses * 6, hospital_dict[2].num_nurses * 6]
+            # get initial state
+            if quantized == False:
+                state = get_state(hospital_dict)
+            if quantized == True:
+                state = get_state(hospital_dict)
+                saved_states.append(get_state(hospital_dict))
+                saved_nurses.append(
+                    [hospital_dict[1].num_nurses * 6, hospital_dict[2].num_nurses * 6]
+                )
+
+                state = quantize_state(hospital_dict, state, Q)
+
+            care_ar.append(
+                hospital_dict[1].num_patients / (hospital_dict[1].num_nurses * 6)
             )
-            state = quantize_state(hospital_dict, state, Q)
-
-        care_ar.append(
-            hospital_dict[1].num_patients / (hospital_dict[1].num_nurses * 6)
-        )
-        care_ar.append(
-            hospital_dict[2].num_patients / (hospital_dict[2].num_nurses * 6)
-        )
-
-        state_ID = get_state_ID(state, Q)
-
-        # have the agent choose an action
-        if optimal == False:
-            action, action_ID = Q.choose_action(state_ID, hospital_dict, t)
-        if optimal == True:
-            action, action_ID = Q.choose_optimal_action(state_ID, hospital_dict, t)
-
-        if no_Control == True:
-            action, action_ID = [5, 5], 4
-
-        print('action = ', action)
-        print('state = ', state)
-
-        hospital_dict = take_action(action, hospital_dict, t)
-        print(f'time = {t}')
-        print(f'num_nurses = {hospital_dict[1].num_nurses,hospital_dict[2].num_nurses}')
-
-        # transition the sytstem to the next state and get the reward
-        hospital_dict, reward = evolve(
-            hospital_dict=hospital_dict, time_step=t, action=action
-        )
-
-        for i in hospital_dict.keys():
-            hospital_dict[i].prev_nurses = action[i - 1]
-
-        running_cost += reward
-
-        # get the new state
-        tik = time.time()
-        if quantized == False:
-            next_state = get_state(hospital_dict)
-        if quantized == True:
-            next_state = get_state(hospital_dict)
-            next_state = quantize_state(hospital_dict, next_state, Q)
-
-        # get the new state ID
-        next_state_ID = get_state_ID(next_state, Q)
-
-        # update the Q table
-        if optimal == False:
-            Q.learn(state_ID, action_ID, reward, next_state_ID)
-        #
-        if t % 10000 == 0 and optimal == False and no_Control == False:
-            np.save(
-                "/Users/reecefuller/Documents/MTHE-493-Stochastic-Control/Q_table.npy",
-                Q.table,
-            )
-            np.save(
-                "/Users/reecefuller/Documents/MTHE-493-Stochastic-Control/actions.npy",
-                Q.actions,
-            )
-            np.save(
-                "/Users/reecefuller/Documents/MTHE-493-Stochastic-Control/states.npy",
-                Q.states,
+            care_ar.append(
+                hospital_dict[2].num_patients / (hospital_dict[2].num_nurses * 6)
             )
 
-        t += 1
+            state_ID = get_state_ID(state, Q)
 
-        if t == end_time + 1:
-            break
+            # have the agent choose an action
+            if optimal == False:
+                action, action_ID = Q.choose_action(state_ID, hospital_dict, t)
+            if optimal == True:
+                action, action_ID = Q.choose_optimal_action(state_ID, hospital_dict, t)
 
-    print(
-        f'total transfered = {hospital_dict[1].total_transfers + hospital_dict[2].total_transfers}'
-    )
+            if no_Control == True:
+                action, action_ID = [5, 5], 4
 
-    t2 = time.time()
-    print(f'time = {t2-t1} s')
+            hospital_dict = take_action(action, hospital_dict, t)
+
+            # transition the sytstem to the next state and get the reward
+            hospital_dict, reward = evolve(
+                hospital_dict=hospital_dict, time_step=t, action=action
+            )
+
+            for i in hospital_dict.keys():
+                hospital_dict[i].prev_nurses = action[i - 1]
+
+            running_cost += reward
+
+            # get the new state
+            tik = time.time()
+            if quantized == False:
+                next_state = get_state(hospital_dict)
+            if quantized == True:
+                next_state = get_state(hospital_dict)
+                next_state = quantize_state(hospital_dict, next_state, Q)
+
+            # get the new state ID
+            next_state_ID = get_state_ID(next_state, Q)
+
+            # update the Q table
+            if optimal == False:
+                Q.learn(state_ID, action_ID, reward, next_state_ID)
+
+            if t % 10000 == 0 and optimal == False and no_Control == False:
+                np.save(
+                    "/Users/reecefuller/Documents/MTHE-493-Stochastic-Control/Q_table.npy",
+                    Q.table,
+                )
+                np.save(
+                    "/Users/reecefuller/Documents/MTHE-493-Stochastic-Control/actions.npy",
+                    Q.actions,
+                )
+                np.save(
+                    "/Users/reecefuller/Documents/MTHE-493-Stochastic-Control/states.npy",
+                    Q.states,
+                )
+
+            t += 1
+
+            if t == end_time - 1:
+
+                total_untreated += (
+                    hospital_dict[1].total_untreated + hospital_dict[2].total_untreated
+                )
+                average_cost += running_cost / end
+                total_deaths += (
+                    hospital_dict[1].num_deaths + hospital_dict[2].num_deaths
+                )
+                total_transfers += (
+                    hospital_dict[1].total_transfers + hospital_dict[2].total_transfers
+                )
+                break
 
     for i in hospital_dict.keys():
         print(f'number of deaths in hospital {i} = {hospital_dict[i].num_deaths}')
@@ -317,6 +335,7 @@ def main():
     print(
         f"percent Q entries filled = {Q.num_Q_values_updated/total_Q_entries * 100} %"
     )
+    print(f'total transfers = {total_transfers/end}')
 
     print("saving Q table...")
     if optimal == False and no_Control == False:
@@ -335,6 +354,10 @@ def main():
     )
 
     print(f'running cost = {running_cost}')
+
+    print(f'average_Cost = {average_cost}')
+    print(f'total deaths = {total_deaths/end}')
+    print(f'average number untrated {total_untreated/end}')
 
     plot_results(saved_states, saved_nurses)
 
