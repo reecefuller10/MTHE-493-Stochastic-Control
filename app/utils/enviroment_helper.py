@@ -28,6 +28,9 @@ class Hospital:
         self.overflow = 0
         self.overflow_array = [0 for i in range (0,14)]
         self.num_deaths = 0
+        self.deaths_delta = 0
+        self.prev_nurses = 5
+        self.total_overflow = 0
         
 
 
@@ -103,7 +106,7 @@ def print_hospital_data(hospital_dict):
         print(f"Data for Hospital {str(i)}:")
         print(f'nurses (x3) = {hospital_dict[i].num_nurses}/{hospital_dict[i].nurse_capacity}')
         print(f"patients = {hospital_dict[i].num_patients}/{hospital_dict[i].patient_capacity}")
-        print('care ratio', hospital_dict[i].num_patients/hospital_dict[i].num_nurses_unquantized)
+        print('care ratio', hospital_dict[i].num_patients/(hospital_dict[i].num_nurses *6))
         print("-----------------------")
 
 #Prints the data for a single hospital
@@ -153,7 +156,7 @@ def drift_patients(ID, hospital_dict, pop_susceptible, pop_infected, pop_hospita
     gamma_H2Rgood = 1/10        #average number of days a patient spends in the hospital when the care ratio is good
     gamma_H2Rbad = 1/25         #average number of days a patient spends in the hospital when the care ratio is bad
     gamma_R2S = 3/4
-    if pop_hospitalized/(hospital_dict[ID].num_nurses_unquantized) < 4:
+    if pop_hospitalized/(hospital_dict[ID].num_nurses*6) < 4:
         P5 = gamma_H2Rgood
     else:
         P5 = gamma_H2Rbad

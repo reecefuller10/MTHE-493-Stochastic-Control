@@ -41,7 +41,8 @@ def take_action(action, hospital_dict, time_step):
     #loop through hospitals and update the actions dict based on actions taken
     for key in list(hospital_dict.keys()):
         idx = int(key)
-        hospital_dict[key].num_nurses += action[idx-1]
+        #hospital_dict[key].num_nurses += action[idx-1]
+        hospital_dict[key].num_nurses = action[idx-1]
 
     return hospital_dict
 

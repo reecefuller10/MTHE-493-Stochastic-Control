@@ -64,6 +64,7 @@ def create_state_space(hospital_dict):  # doesnt do anything anymore i think
         # print(f"linspace array = {array}")
         patients_dict[ID] = array
 
+
     # array where each entry is a possible state
     comb_array = np.array(
         np.meshgrid(
@@ -74,6 +75,7 @@ def create_state_space(hospital_dict):  # doesnt do anything anymore i think
             patients_dict[5],
         )
     ).T.reshape(-1, 5)
+
 
     for i in range(len(comb_array)):
         value = state(i, comb_array[i])
@@ -97,6 +99,7 @@ def create_state_space(hospital_dict):  # doesnt do anything anymore i think
                 break
 
     # return all states
+
     return comb_array
 
 
@@ -107,6 +110,7 @@ def create_action_space(hospital_dict):
 
     # creates an array of arrays where the inside arrays varries over al possible nurse transfers
     for ID in hospital_dict.keys():
+
         array = np.linspace(
             1,
             hospital_dict[ID].nurse_capacity,
@@ -121,6 +125,7 @@ def create_action_space(hospital_dict):
     comb_array = np.array(np.meshgrid(nurses_dict[1], nurses_dict[2])).T.reshape(-1, 2)
 
     # get the indices of all actions that sum to 0 (cant recieve more nurses than were transfered)
+
     keep_array = []
     for i in range(len(comb_array)):
         if np.sum(comb_array[i]) == 10:
@@ -273,6 +278,7 @@ class Q_table:
         print(comb_array)
 
         self.states = comb_array
+        print(self.states)
 
         for i in range(len(comb_array)):
             value = state(i, comb_array[i])
@@ -310,6 +316,7 @@ class Q_table:
 
         # Agent keeps picking unvalid actions not in the actions table (this is a temp fix) (TODO: figure out why this happens)
         non_valid = True
+
         while non_valid == True:
 
             action = rand.choice(self.actions)
@@ -320,6 +327,7 @@ class Q_table:
                 # fail case to handle if it picks an integer instead of a 5-tuple (TODO: stop this from happening)
                 try:
                     if action.type() == int.type():
+
                         break
                 except:
                     0
