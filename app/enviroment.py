@@ -61,13 +61,6 @@ def queue_evolve_v2(ID, hospital_dict, lam, mewBad):
 
     else:
         departures = np.random.poisson(mewBad)
-    '''
-
-    if QoC < 6:
-        departures = np.random.poisson(6.25-((0.35)/6)*QoC)
-    else:
-        departures = np.random.poisson(mewBad)
-
 
     # update number of patients in hospital based on departures
     hospital_dict[ID].num_patients = max(0, hospital_dict[ID].num_patients - departures)
